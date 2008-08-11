@@ -47,3 +47,15 @@ callbacks:
     MT::App::CMS::template_source.header: QuickRebuild::App::template_source_header
     MT::App::CMS::template_source.rebuild_confirm: QuickRebuild::App::template_source_rebuild_confirm
     MT::App::CMS::template_source.rebuilt: QuickRebuild::App::template_source_rebuilt
+
+applications:
+    cms:
+        methods:
+            rebuild_all_blog_js: QuickRebuild::App::rebuild_all_blog_js
+
+        menus:
+            system:quickrebuild:
+                label: Rebuild all blog
+                order: 1000
+                mode: rebuild_all_blog
+                system_permission: administer

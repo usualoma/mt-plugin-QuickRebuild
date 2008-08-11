@@ -35,7 +35,6 @@ use strict;
 sub template_source_header {
 	my ($cb, $app, $tmpl) = @_;
 	my $plugin = $app->component('QuickRebuild');
-	my $blog_id = $app->param('blog_id') or return;
 
 	my $new_tmpl = <<'__EOH__';
                         <li id="quick-rebuild-site" class="nav-link"><a href="javascript:void(0)" title="<__trans phrase="Quick Publish Site">" onclick="window.open('<$mt:var name="mt_url"$>?__mode=rebuild_confirm&amp;blog_id=<$mt:var name="blog_id"$>&amp;quick_rebuild=1', 'quick_rebuild', 'width=400,height=400,resizable=yes'); return false">QR</a></li>
@@ -45,6 +44,30 @@ __EOH__
 	my $old = '<li id="rebuild-site" class="nav-link">';
 
 	$$tmpl =~ s/($old)/$new\n$old/;
+
+	my $rebuld_script = <<'__EOS__';
+<script type="text/javascript">
+(function() {
+	var links = document.getElementsByTagName('a');
+	for (var i = 0; i < links.length; i++) {
+		if (/__mode=rebuild_all_blog/.test(links[i].href)) {
+			links[i].href = "javascript:(function(){var%20s=document.createElement(%22script%22);s.charset=%22UTF-8%22;s.src=%22<$mt:var name="mt_url"$>?__mode=rebuild_all_blog_js%22;document.body.appendChild(s)})();"
+		}
+	}
+})();
+</script>
+__EOS__
+
+	$$tmpl .= $plugin->translate_templatized($rebuld_script);
+
+	if ($app->can('param') && (! $app->param('blog_id'))) {
+		my $new_tmpl = <<'__EOH__';
+                        <li id="quick-rebuild-site" class="nav-link"><a href="<$mt:var name="mt_url"$>?__mode=rebuild_all_blog" title="<__trans phrase="Rebuild all blog">">QR</a></li>
+__EOH__
+
+		my $new = $plugin->translate_templatized($new_tmpl);
+		$$tmpl =~ s/(id="view-site"(.|\r|\n)*?)(<\/ul>)/$1$new$2/si;
+	}
 
 	$$tmpl;
 }
@@ -78,7 +101,6 @@ __EOH__
 sub template_source_rebuilt {
 	my ($cb, $app, $tmpl) = @_;
 	my $plugin = $app->component('QuickRebuild');
-	my $blog_id = $app->param('blog_id') or return;
 
 	my $new_tmpl = <<'__EOH__';
 <script type="text/javascript">
@@ -105,6 +127,22 @@ __EOH__
 	$$tmpl =~ s/($old)/$new\n$old/;
 
 	$$tmpl;
+}
+
+sub rebuild_all_blog_js {
+    my $app = shift;
+    my ($param) = @_;
+    $param ||= {};
+
+	my $plugin = MT->component('QuickRebuild');
+	my $edit_tmpl = File::Spec->catdir(
+		$plugin->{full_path}, 'tmpl', 'mt-rebuild.js'
+	);
+
+	$app->{no_print_body} = 1;
+	$app->send_http_header("text/javascript");
+	open(my $fh, $edit_tmpl);
+	$app->print(do{ local $/; <$fh> });
 }
 
 1;

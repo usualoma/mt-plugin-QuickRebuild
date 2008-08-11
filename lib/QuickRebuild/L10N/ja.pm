@@ -39,6 +39,7 @@ use vars qw( %Lexicon );
 	'Quick Publish Site' => 'サイトを再構築(クリックでスタート)',
 	'rebuild quickly' => '再構築を簡単に行います',
 	'toi-planning' => 'ToI企画',
+	'Rebuild all blog' => '全てのブログを再構築',
 );
 
 1;
