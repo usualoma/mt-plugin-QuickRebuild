@@ -1,0 +1,18 @@
+#plugin name
+name: QuickRebuild
+version: 0.1
+
+#about this plugin
+description: <__trans phrase="rebuild quickly">
+author_name: <__trans phrase="toi-planning">
+author_link: http://tec.toi-planning.net/
+plugin_link: http://tec.toi-planning.net/mt/quickrebuild/
+doc_link: http://tec.toi-planning.net/mt/quickrebuild#manual
+
+#Localization
+l10n_class: QuickRebuild::L10N
+
+callbacks:
+    MT::App::CMS::template_source.header: QuickRebuild::App::template_source_header
+    MT::App::CMS::template_source.rebuild_confirm: QuickRebuild::App::template_source_rebuild_confirm
+    MT::App::CMS::template_source.rebuilt: QuickRebuild::App::template_source_rebuilt
