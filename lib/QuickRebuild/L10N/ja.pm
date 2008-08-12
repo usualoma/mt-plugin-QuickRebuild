@@ -37,9 +37,17 @@ use vars qw( %Lexicon );
 
 %Lexicon = (
 	'Quick Publish Site' => 'サイトを再構築(クリックでスタート)',
-	'rebuild quickly' => '再構築を簡単に行います',
+	'Rebuild quickly' => '再構築支援プラグイン',
+	'Rebuild' => '再構築',
 	'toi-planning' => 'ToI企画',
 	'Rebuild all blog' => '全てのブログを再構築',
+
+	'Only Author Monthly Archives' => 'ユーザー-月別アーカイブのみ',
+	'Only Category Archives' => 'カテゴリアーカイブのみ',
+	'Only Category Monthly Archives' => 'カテゴリ-月別アーカイブのみ',
+	'Only Monthly Archives' => '月別アーカイブのみ',
+	'Only Page Archives' => 'ウェブページアーカイブのみ',
+	'Only Entry Archives' => 'ブログ記事アーカイブのみ',
 );
 
 1;

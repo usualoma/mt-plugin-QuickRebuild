@@ -106,19 +106,34 @@ function ToIMT (param) {
 		this.mt_cgi = window.location.href.sub(/\?.*/, '');
 	}
 	if (! this.frame) {
-		var frames = $$('iframe[name=dialog_iframe]');
-		if (frames.length) {
-			this.frame = frames[0];
+		if (window.ToIMTRebuildWindow) {
+			if (typeof(window.ToIMTRebuildWindow) == 'object') {
+				this.frame = window.ToIMTRebuildWindow;
+			}
+			else {
+				this.frame = window.open(
+					'', 'mt_rebuild_js_window',
+					'width=400,height=400,resizable=yes'
+				);
+			}
 		}
 		else {
-			this.frame = new Element('iframe', {name: 'mt_rebuild_js_frame'});
-			this.frame.style.width = '100%';
-			this.frame.style.height = '250px';
-			this.frame.style.overflow = 'hidden';
-			document.body.appendChild(this.frame);
-		}
+			var frames = $$('iframe[name=dialog_iframe]');
+			if (frames.length) {
+				this.frame = frames[0];
+			}
+			else {
+				this.frame = new Element(
+					'iframe', {name: 'mt_rebuild_js_frame'}
+				);
+				this.frame.style.width = '100%';
+				this.frame.style.height = '250px';
+				this.frame.style.overflow = 'hidden';
+				document.body.appendChild(this.frame);
+			}
 
-		openDialog(false, '');
+			openDialog(false, '');
+		}
 	}
 	if (! this.rebuild_queue) {
 		this.rebuild_queue = [];
@@ -132,6 +147,30 @@ ToIMT.prototype.rebuild_all = function() {
 		self.rebuild_queue = list;
 		self.do_rebuild();
 	});
+};
+
+/* フレームのドキュメントを返す */
+ToIMT.prototype.frame_document = function() {
+	if (this.frame.document) {
+		return this.frame.document;
+	}
+	else if (this.frame.contentWindow && this.frame.contentWindow.document) {
+		return this.frame.contentWindow.document;
+	}
+	else {
+		return null;
+	}
+};
+
+/* フレーム内のコンテンツがロードされたか？ */
+ToIMT.prototype.frame_get_element_by_id = function(id) {
+	var doc = this.frame_document();
+	if (doc) {
+		return doc.getElementById(id);
+	}
+	else {
+		return null;
+	}
 };
 
 /* リビルドキューに入っているブログを全てリビルドする */
@@ -163,12 +202,10 @@ ToIMT.prototype.fetch_blog_info = function(blog, onComplete) {
 	window.open(url, this.frame.name);
 
 	function wait() {
-		if (
-			(self.frame.contentWindow) &&
-			(self.frame.contentWindow.document)
-		) {
+		var doc = self.frame_document();
+		if (doc) {
 			var select = [];
-			$A(self.frame.contentWindow.document.getElementsByTagName('select')).each(function(elm) {
+			$A(doc.getElementsByTagName('select')).each(function(elm) {
 				if (elm.name == "type") {
 					select.push(elm);
 				}
@@ -194,7 +231,7 @@ ToIMT.prototype.rebuild_blog = function(blog, onComplete) {
 
 	function inner() {
 		function inner2() {
-			this.log('rebuild start ' + blog.get('name'));
+			self.log('rebuild start ' + blog.get('name'));
 			var param = $H({
 				__mode: 'start_rebuild',
 				blog_id: blog.get('id'),
@@ -206,20 +243,17 @@ ToIMT.prototype.rebuild_blog = function(blog, onComplete) {
 			window.open(url, self.frame.name);
 
 			function wait() {
-				if (
-					(self.frame.contentWindow) &&
-					(self.frame.contentWindow.document)
-				) {
-					var contentDocument = self.frame.contentWindow.document;
-					var success = contentDocument.getElementById('message');
+				var doc = self.frame_document();
+				if (doc) {
+					var success = doc.getElementById('message');
 					if (success && success.className.search('msg-success')) {
 						success.id = 'hide_message'
 						self.log('rebuild success ' + blog.get('name'));
 
-						contentDocument.getElementById(
+						doc.getElementById(
 							'hide_message'
 						).style.visibility = 'hidden';
-						$A(contentDocument.getElementsByTagName('button')).each(
+						$A(doc.getElementsByTagName('button')).each(
 							function(elm) {
 								if (elm.accessKey == 's') {
 									elm.style.visibility = 'hidden';
@@ -260,20 +294,14 @@ ToIMT.prototype.list_blogs = function(onListed) {
 	window.open(url, self.frame.name);
 
 	function inner() {
-		if (
-			(! self.frame.contentWindow) ||
-			(! self.frame.contentWindow.document) ||
-			(! self.frame.contentWindow.document.getElementById('blog-listing-table'))
-		) {
+		var table = self.frame_get_element_by_id('blog-listing-table');
+		if (! table) {
 			setTimeout(inner, 1000);
 			return;
 		}
 
 		var blogs = [];
 
-		var table = self.frame.contentWindow.document.getElementById(
-			'blog-listing-table'
-		);
 		var tbody = table.getElementsByTagName('tbody')[0];
 		$A(tbody.getElementsByTagName('tr')).each(function(row) {
 			var cols = $A(row.getElementsByTagName('td'));
