@@ -47,7 +47,7 @@ __EOH__
 		$$tmpl =~ s/($old)/$new\n$old/;
 	}
 
-	if (1) {
+	if (0) {
 		$$tmpl =~ s/<li\s*id="rebuild-site"(.|\n|\r)*?<\/li>//i;
 	}
 
