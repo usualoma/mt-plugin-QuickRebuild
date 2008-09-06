@@ -90,6 +90,14 @@ __EOS__
 
 	$$tmpl .= $plugin->translate_templatized($rebuld_script);
 
+	$$tmpl .= <<__EOM__;
+<style type="text/css">
+html li#quickrebuild-menu ul {
+	width: auto;
+}
+</style>
+__EOM__
+
 	if ($app->can('param') && (! $app->param('blog_id'))) {
 		my $new_tmpl = <<'__EOH__';
                         <li id="quick-rebuild-site" class="nav-link"><a href="<$mt:var name="mt_url"$>?__mode=rebuild_all_blog" title="<__trans phrase="Rebuild all blog">"><__trans phrase="Rebuild"></a></li>
@@ -239,7 +247,12 @@ sub init_app {
 				next;
 			}
 			my $t = $types->{$k};
-			(my $phrase = $t->{name}) =~ s/-/ /;
+
+			my $phrase = (ref $t) ? $t->{name} : $t;
+			$phrase =~ s/.*:://;
+			$phrase =~ s/-/ /;
+			$phrase =~ s/(?<=[a-z])([A-Z])/ $1/g;
+
 			$menus->{'quickrebuild:' . $k} = {
 				label => $app->translate(
 					'Only [_1] Archives', $app->translate($phrase)
