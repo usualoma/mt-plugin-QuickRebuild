@@ -38,7 +38,7 @@ description: <__trans phrase="Rebuild quickly">
 author_name: <__trans phrase="toi-planning">
 author_link: http://tec.toi-planning.net/
 plugin_link: http://tec.toi-planning.net/mt/quickrebuild/
-doc_link: http://tec.toi-planning.net/mt/quickrebuild#manual
+doc_link: http://tec.toi-planning.net/mt/quickrebuild/
 
 #Localization
 l10n_class: QuickRebuild::L10N
