@@ -1,4 +1,4 @@
-VERSION=$(shell cat VERSION)
+VERSION=$(shell grep -i '^version' config.yaml | sed 's/.*: *//')
 BASENAME=$(shell basename `pwd`)_${VERSION}_$(shell date '+%Y%m%d')
 
 PROJECT=$(shell svn info | grep ^URL | sed 's/.*:\/\///' | sed 's/\.googlecode\.com.*//')
