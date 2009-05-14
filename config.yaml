@@ -78,4 +78,3 @@ applications:
                 label: Rebuild all blog
                 order: 1000
                 mode: rebuild_all_blog
-                system_permission: administer

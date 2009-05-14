@@ -31,7 +31,7 @@
  *  $Id$
  */
 
-/* 外部ライブラリのロード */
+/* Loading external libraries. */
 if (typeof Prototype === 'undefined') {
 	(function(){
 		var use_local_prototype_js = false;
@@ -61,7 +61,7 @@ if (typeof Prototype === 'undefined') {
 	})();
 }
 
-/* リビルド */
+/* Rebuilding */
 function mt_rebuild(param) {
 	function inner() {
 		if (typeof Prototype === 'undefined') {
@@ -75,7 +75,7 @@ function mt_rebuild(param) {
 	inner();
 }
 
-/* MTインスタンス */
+/* Instance of MT */
 function ToIMT (param) {
 	this.Version = '0.1';
 
@@ -106,74 +106,82 @@ function ToIMT (param) {
 		this.mt_cgi = window.location.href.sub(/\?.*/, '');
 	}
 	if (! this.frame) {
-		if (window.ToIMTRebuildWindow) {
-			if (typeof(window.ToIMTRebuildWindow) == 'object') {
-				this.frame = window.ToIMTRebuildWindow;
-			}
-			else {
-				this.frame = window.open(
-					'', 'mt_rebuild_js_window',
-					'width=400,height=400,resizable=yes'
-				);
-			}
+		var toi_mt_rebuild_window = $$('iframe[name=ToIMTRebuildWindow]');
+		if (toi_mt_rebuild_window.length) {
+			this.message_frame = toi_mt_rebuild_window[0];
 		}
 		else {
 			var frames = $$('iframe[name=dialog_iframe]');
 			if (frames.length) {
-				this.frame = frames[0];
+				this.message_frame = frames[0];
 			}
 			else {
-				this.frame = new Element(
+				this.message_frame = new Element(
 					'iframe', {name: 'mt_rebuild_js_frame'}
 				);
-				this.frame.style.width = '100%';
-				this.frame.style.height = '250px';
-				this.frame.style.overflow = 'hidden';
-				document.body.appendChild(this.frame);
+				this.message_frame.style.width = '100%';
+				this.message_frame.style.height = '250px';
+				this.message_frame.style.overflow = 'hidden';
+				document.body.appendChild(this.message_frame);
 			}
 
 			openDialog(false, '');
 		}
+
+		this.frame = new Element('iframe', {name: 'mt_rebuild_js_exec_frame'});
+		this.frame.style.width = '0px';
+		this.frame.style.height = '0px';
+		this.frame.style.overflow = 'hidden';
+		document.body.appendChild(this.frame);
 	}
 	if (! this.rebuild_queue) {
 		this.rebuild_queue = [];
 	}
 };
 
-/* 全てのブログをリビルドする */
+/* Rebuild all blogs */
 ToIMT.prototype.rebuild_all = function() {
 	var self = this;
-	this.list_blogs(function(list) {
+	function onListed(list) {
+		var i;
+		for (i = 0; i < list.length; i++) {
+			list[i] = $H(list[i]);
+		}
+
+		var str = '';
+		self.message_frame.contentWindow.document.open();
+		self.message_frame.contentWindow.document.write(
+			'<ul>' +
+			list.map(function(b) {
+				return '<li id="' + b.get('id') + '">' + b.get('name') +
+					' <a href="' + self.mt_cgi + '?blog_id=' + b.get('id') + '" target="_blank">Home</a>' +
+					' <a href="' + self.mt_cgi + '?__mode=list&_type=template&blog_id=' + b.get('id') + '" target="_blank">Design</a>' +
+					' <span class="rebuild_doing" style="display: none" >Rebuilding...</span> ' +
+					' <span class="rebuild_success" style="display: none" >Done</span> ' +
+					'</li>';
+			}).join('') +
+			'</ul>' +
+			'<a href="javascript: void;" id="close-dialog">Close</a>'
+		);
+		self.message_frame.contentWindow.document.close();
+
+		var close = self.message_frame.contentWindow.document.getElementById('close-dialog');
+		close.onclick = function() { window.close(); };
+
+
 		self.rebuild_queue = list;
 		self.do_rebuild();
-	});
-};
-
-/* フレームのドキュメントを返す */
-ToIMT.prototype.frame_document = function() {
-	if (this.frame.document) {
-		return this.frame.document;
 	}
-	else if (this.frame.contentWindow && this.frame.contentWindow.document) {
-		return this.frame.contentWindow.document;
+
+	if (self.rebuild_queue.length == 0) {
+		this.list_blogs(onListed);
 	}
 	else {
-		return null;
+		onListed(this.rebuild_queue);
 	}
 };
 
-/* フレーム内のコンテンツがロードされたか？ */
-ToIMT.prototype.frame_get_element_by_id = function(id) {
-	var doc = this.frame_document();
-	if (doc) {
-		return doc.getElementById(id);
-	}
-	else {
-		return null;
-	}
-};
-
-/* リビルドキューに入っているブログを全てリビルドする */
+/* Rebuild blogs in queue. */
 ToIMT.prototype.do_rebuild = function() {
 	if (this.rebuild_queue.length == 0) {
 		return;
@@ -188,7 +196,7 @@ ToIMT.prototype.do_rebuild = function() {
 	);
 }
 
-/* 再構築可能なタイプを取得する */
+/* Fetching blog information. */
 ToIMT.prototype.fetch_blog_info = function(blog, onComplete) {
 	var self = this;
 
@@ -202,10 +210,12 @@ ToIMT.prototype.fetch_blog_info = function(blog, onComplete) {
 	window.open(url, this.frame.name);
 
 	function wait() {
-		var doc = self.frame_document();
-		if (doc) {
+		if (
+			(self.frame.contentWindow) &&
+			(self.frame.contentWindow.document)
+		) {
 			var select = [];
-			$A(doc.getElementsByTagName('select')).each(function(elm) {
+			$A(self.frame.contentWindow.document.getElementsByTagName('select')).each(function(elm) {
 				if (elm.name == "type") {
 					select.push(elm);
 				}
@@ -225,9 +235,20 @@ ToIMT.prototype.fetch_blog_info = function(blog, onComplete) {
 	wait();
 }
 
-/* 指定されたブログをリビルドする */
+/* Rebuild blog specified */
 ToIMT.prototype.rebuild_blog = function(blog, onComplete) {
 	var self = this;
+
+	var li = self.message_frame.contentWindow.document.getElementById(blog.get('id'));
+
+	li.style.textDecoration = 'underline';
+	var li_nodes = li.childNodes;
+	var i;
+	for (i = 0; i < li_nodes.length; i++) {
+		if (li_nodes[i].className == 'rebuild_doing') {
+			li_nodes[i].style.display = '';
+		}
+	}
 
 	function inner() {
 		function inner2() {
@@ -243,17 +264,20 @@ ToIMT.prototype.rebuild_blog = function(blog, onComplete) {
 			window.open(url, self.frame.name);
 
 			function wait() {
-				var doc = self.frame_document();
-				if (doc) {
-					var success = doc.getElementById('message');
+				if (
+					(self.frame.contentWindow) &&
+					(self.frame.contentWindow.document)
+				) {
+					var contentDocument = self.frame.contentWindow.document;
+					var success = contentDocument.getElementById('message');
 					if (success && success.className.search('msg-success')) {
-						success.id = 'hide_message'
+						success.id = 'hide_message';
 						self.log('rebuild success ' + blog.get('name'));
 
-						doc.getElementById(
+						contentDocument.getElementById(
 							'hide_message'
 						).style.visibility = 'hidden';
-						$A(doc.getElementsByTagName('button')).each(
+						$A(contentDocument.getElementsByTagName('button')).each(
 							function(elm) {
 								if (elm.accessKey == 's') {
 									elm.style.visibility = 'hidden';
@@ -266,7 +290,25 @@ ToIMT.prototype.rebuild_blog = function(blog, onComplete) {
 								}
 							}
 						);
+
+						li.style.textDecoration = '';
+						li.style.fontWeight = 'bold';
+						var li_nodes = li.childNodes;
+						var i;
+						for (i = 0; i < li_nodes.length; i++) {
+							if (li_nodes[i].className == 'rebuild_success') {
+								li_nodes[i].style.display = '';
+							}
+						}
+
 						return onComplete();
+					}
+
+					var error = contentDocument.getElementById('generic-error');
+					if (error) {
+						error.id = 'hide_message';
+
+						alert(error.innerHTML.replace(/.*<\/a>/, '').strip().unescapeHTML());
 					}
 				}
 				setTimeout(wait, 500);
@@ -285,7 +327,7 @@ ToIMT.prototype.rebuild_blog = function(blog, onComplete) {
 	inner();
 };
 
-/* MTに登録されているブログをリストアップする */
+/* Listing blogs */
 ToIMT.prototype.list_blogs = function(onListed) {
 	var self = this;
 
@@ -293,15 +335,24 @@ ToIMT.prototype.list_blogs = function(onListed) {
 	var url = self.mt_cgi + '?__mode=list_blogs';
 	window.open(url, self.frame.name);
 
+	self.message_frame.contentWindow.document.open();
+	self.message_frame.contentWindow.document.write('Listing blgos...');
+
 	function inner() {
-		var table = self.frame_get_element_by_id('blog-listing-table');
-		if (! table) {
+		if (
+			(! self.frame.contentWindow) ||
+			(! self.frame.contentWindow.document) ||
+			(! self.frame.contentWindow.document.getElementById('blog-listing-table'))
+		) {
 			setTimeout(inner, 1000);
 			return;
 		}
 
 		var blogs = [];
 
+		var table = self.frame.contentWindow.document.getElementById(
+			'blog-listing-table'
+		);
 		var tbody = table.getElementsByTagName('tbody')[0];
 		$A(tbody.getElementsByTagName('tr')).each(function(row) {
 			var cols = $A(row.getElementsByTagName('td'));
@@ -312,6 +363,8 @@ ToIMT.prototype.list_blogs = function(onListed) {
 		});
 
 		self.log('fetching blog list done');
+		self.message_frame.contentWindow.document.write('done.');
+		self.message_frame.contentWindow.document.close();
 
 		onListed(blogs);
 	}
@@ -319,5 +372,8 @@ ToIMT.prototype.list_blogs = function(onListed) {
 	inner();
 };
 
-/* 処理開始 */
-mt_rebuild();
+var mt_rebuild_rebuild_queue;
+/* Do rebuild */
+mt_rebuild({
+	rebuild_queue: mt_rebuild_rebuild_queue
+});

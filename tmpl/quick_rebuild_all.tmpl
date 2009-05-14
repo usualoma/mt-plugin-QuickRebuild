@@ -23,6 +23,16 @@
 </head>
 <body>
 	<iframe src="" name="ToIMTRebuildWindow" frameborder="0"></iframe>
+	<script>
+		var mt_rebuild_rebuild_queue = [];
+		<mt:Loop name="blogs">
+			<mt:Var name="__value__" />
+		mt_rebuild_rebuild_queue.push({
+			id: '<mt:Var name="id" />',
+			name: '<mt:Var name="name" />'
+		});
+		</mt:Loop>
+	</script>
 	<script src="<mt:var name="script_url">?__mode=rebuild_all_blog_js">
 	</script>
 </body>

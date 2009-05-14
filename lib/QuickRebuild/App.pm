@@ -202,16 +202,29 @@ sub rebuild_all_blog_js {
 		$plugin->{full_path}, 'tmpl', 'mt-rebuild.js'
 	);
 
-	$app->{no_print_body} = 1;
-	$app->send_http_header("text/javascript");
+	$app->{cgi_headers}{'Content-Type'} = 'text/javascript; charset=UTF-8';
 	open(my $fh, $edit_tmpl);
-	$app->print(do{ local $/; <$fh> });
+	do{ local $/; <$fh> };
 }
 
 sub quick_rebuild_all {
     my $app = shift;
     my ($param) = @_;
     $param ||= {};
+
+	my $blogs = [];
+	my $iter = MT->model('blog')->load_iter(
+		undef,
+		{
+			'sort' => 'id',
+		}
+	);
+	while (my $blog = $iter->()) {
+		if ($app->user->blog_perm($blog->id)->can_rebuild) {
+			push(@$blogs, $blog);
+		}
+	}
+	$param->{'blogs'} = $blogs;
 
 	my $plugin = MT->component('QuickRebuild');
 	my $edit_tmpl = File::Spec->catdir(
