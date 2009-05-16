@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2008 ToI-Planning, All rights reserved.
+ *  Copyright (c) 2008-2009 ToI-Planning, All rights reserved.
  *
  *  Redistribution and use in source and binary forms, with or without
  *  modification, are permitted provided that the following conditions
@@ -31,6 +31,7 @@
  *  $Id$
  */
 
+
 /* Loading external libraries. */
 if (typeof Prototype === 'undefined') {
 	(function(){
@@ -43,7 +44,7 @@ if (typeof Prototype === 'undefined') {
 			for(i = 0; i < ss.length; i++) {
 				s = ss[i];
 				if (s.src) {
-					var index = s.src.search(/mt-rebuild.js/);
+					var index = s.src.search(re);
 					if (index != -1) {
 						base_url = s.src.substring(0, index);
 					}
@@ -56,6 +57,7 @@ if (typeof Prototype === 'undefined') {
 
 		var s = document.createElement("script");
 		s.charset = "UTF-8";
+		s.type = 'text/javascript';
 		s.src = base_url + "prototype.js";
 		document.body.appendChild(s)
 	})();
@@ -78,6 +80,21 @@ function mt_rebuild(param) {
 /* Instance of MT */
 function ToIMT (param) {
 	this.Version = '0.1';
+	(function(self) {
+		var ss = document.getElementsByTagName("script");
+		var re = new RegExp(/github\.com\/([^\/]*)\/mt-rebuild\/raw\/([^\/]*)\/mt-rebuild.js/);
+		var i;
+		for(i = 0; i < ss.length; i++) {
+			s = ss[i];
+			if (s.src) {
+				var m = s.src.match(re);
+				if (m) {
+					self.developper = m[1];
+					self.id = m[2];
+				}
+			}
+		}
+	})(this);
 
 	for(k in param) {
 		this[k] = param[k];
@@ -128,15 +145,46 @@ function ToIMT (param) {
 			openDialog(false, '');
 		}
 
-		this.frame = new Element('iframe', {name: 'mt_rebuild_js_exec_frame'});
-		this.frame.style.width = '0px';
-		this.frame.style.height = '0px';
-		this.frame.style.overflow = 'hidden';
-		document.body.appendChild(this.frame);
+		var exec_frame = $$('iframe[name=mt_rebuild_js_exec_frame]');
+		if (exec_frame.length) {
+			this.frame = exec_frame[0];
+		}
+		else {
+			this.frame = new Element(
+				'iframe', {name: 'mt_rebuild_js_exec_frame'}
+			);
+			this.frame.style.width = '0px';
+			this.frame.style.height = '0px';
+			this.frame.style.overflow = 'hidden';
+			document.body.appendChild(this.frame);
+		}
 	}
 	if (! this.rebuild_queue) {
 		this.rebuild_queue = [];
 	}
+};
+
+/* Checking a new version */
+ToIMT.prototype.check_version = function(onUpdated) {
+	var self = this;
+	if (! this.id) {
+		return false;
+	}
+
+	window.ToIMT_check_version_callback = function(obj) {
+		var id = obj['commits'][0]['id'];
+		if (obj['commits'][0]['id'] != self.id) {
+			onUpdated(id);
+		}
+	};
+
+	var s = document.createElement("script");
+	s.charset = "UTF-8";
+	s.type = 'text/javascript';
+	s.src = 'http://github.com/api/v2/json/commits/list/' + self.developper + '/mt-rebuild/master/mt-rebuild.js?callback=ToIMT_check_version_callback';
+	document.body.appendChild(s)
+
+	return false;
 };
 
 /* Rebuild all blogs */
@@ -148,29 +196,164 @@ ToIMT.prototype.rebuild_all = function() {
 			list[i] = $H(list[i]);
 		}
 
-		var str = '';
+		var buttons =
+			'<input type="submit" value="Rebuild" name="start_rebuild" />' +
+			'&nbsp;' +
+			'<input type="submit" value="Stop" name="stop_rebuild" disabled="disabled" />' +
+			'&nbsp;' +
+			'<input type="submit" value="Close" name="close_dialog" />';
+
 		self.message_frame.contentWindow.document.open();
 		self.message_frame.contentWindow.document.write(
+			'<style type="text/css">' +
+			'#blogs ul li { list-style: none; }' +
+			'#new_version a { text-decoration: none; }' +
+			'#new_version input { width: 100%; }' +
+			'</style>' +
+			'<form id="blogs" >' +
+			buttons +
+			'<div id="new_version" style="display: none"><a href="javascript: ;">New version of mt-rebuild is available here.</a><br /><input readonly="readonly" style="display: none;"/></div>' +
 			'<ul>' +
+			'<li><input type="checkbox" id="checkall" checked="checked" /></li>' +
 			list.map(function(b) {
-				return '<li id="' + b.get('id') + '">' + b.get('name') +
-					' <a href="' + self.mt_cgi + '?blog_id=' + b.get('id') + '" target="_blank">Home</a>' +
-					' <a href="' + self.mt_cgi + '?__mode=list&_type=template&blog_id=' + b.get('id') + '" target="_blank">Design</a>' +
-					' <span class="rebuild_doing" style="display: none" >Rebuilding...</span> ' +
-					' <span class="rebuild_success" style="display: none" >Done</span> ' +
-					'</li>';
+				return [ '<li id="', b.get('id'), '">',
+					'<input type="checkbox" name="rebuild_', b.get('id'), '" />&nbsp;',
+					b.get('name'),
+					' <a href="', self.mt_cgi, '?blog_id=', b.get('id'), '" target="_blank">Home</a>',
+					' <a href="', self.mt_cgi, '?__mode=list&_type=template&blog_id=', b.get('id'), '" target="_blank">Design</a>',
+					' <span class="rebuild_doing" style="display: none" >Rebuilding...</span> ',
+					' <span class="rebuild_success" style="display: none" >Done</span> ',
+					' <span class="rebuild_error" style="display: none" ></span> ',
+					'</li>'
+				].join('');
 			}).join('') +
 			'</ul>' +
-			'<a href="javascript: void;" id="close-dialog">Close</a>'
+			buttons +
+			'</form>'
 		);
 		self.message_frame.contentWindow.document.close();
 
-		var close = self.message_frame.contentWindow.document.getElementById('close-dialog');
-		close.onclick = function() { window.close(); };
+		function getById(id) {
+			return self.message_frame.contentWindow.document.getElementById(id);
+		}
 
+		function getByName(name) {
+			return self.message_frame.contentWindow.document.getElementsByName(
+				name
+			);
+		}
 
-		self.rebuild_queue = list;
-		self.do_rebuild();
+		function forAllInput(func) {
+			var f = getById('blogs');
+			var inputs = f.elements;
+			var i;
+			for (i = 0; i < inputs.length; i++) {
+				func(inputs[i]);
+			}
+		}
+
+		self.check_version(function(id) {
+			var div = getById('new_version');
+
+			var input = div.getElementsByTagName('input')[0];
+			input.value = 'javascript:(function(){var%20s=document.createElement(%22script%22);s.charset=%22UTF-8%22;s.type=%22text/javascript%22;s.src=%22http://github.com/' + self.developper + '/mt-rebuild/raw/' + id + '/mt-rebuild.js%22;document.body.appendChild(s)})();';
+
+			var a = div.getElementsByTagName('a')[0];
+			a.target = '_blank';
+			a.onclick = function() {
+				input.style.display = '';
+				return false;
+			};
+
+			div.style.display = '';
+		});
+
+		var all = getById('checkall');
+		function all_clicked() {
+			forAllInput(function(i) {
+				if (i.name.match(/^rebuild_\d+$/)) {
+					i.checked = all.checked;
+				}
+			});
+		};
+		all.onchange = all_clicked;
+		all_clicked();
+
+		function stop_rebuild() {
+			if (
+				self.frame.contentWindow && self.frame.contentWindow.stop
+			) {
+				self.frame.contentWindow.stop();
+			}
+			self.stopped = true;
+
+			$A(getByName('stop_rebuild')).each(function(stop) {
+				stop.disabled = 'disabled';
+			});
+			$A(getByName('start_rebuild')).each(function(start) {
+				start.disabled = '';
+			});
+		}
+
+		$A(getByName('stop_rebuild')).each(function(stop) {
+			stop.onclick = function() {
+				stop_rebuild();
+				return false;
+			};
+		});
+
+		$A(getByName('close_dialog')).each(function(close) {
+			close.onclick = function() {
+				stop_rebuild();
+				closeDialog ? closeDialog() : window.close();
+				return false;
+			};
+		});
+
+		$A(getByName('start_rebuild')).each(function(start) {
+			start.onclick = function() {
+				self.stopped = false;
+
+				var f = getById('blogs');
+				var queue = list.map(function(b) {
+					var li = getById(b.get('id'));
+					li.style.textDecoration = '';
+					li.style.fontWeight = '';
+					li.style.color = '';
+					var li_nodes = li.childNodes;
+					var i;
+					for (i = 0; i < li_nodes.length; i++) {
+						if (
+							(li_nodes[i].className) &&
+							(li_nodes[i].className.match(/^rebuild_/))
+						) {
+							li_nodes[i].style.display = 'none';
+						}
+					}
+
+					return f['rebuild_' + b.get('id')].checked ? b : null;
+				}).compact();
+
+				$A(getByName('stop_rebuild')).each(function(stop) {
+					stop.disabled = '';
+				});
+				$A(getByName('start_rebuild')).each(function(start) {
+					start.disabled = 'disabled';
+				});
+
+				self.rebuild_queue = queue;
+				self.do_rebuild(function() {
+					$A(getByName('stop_rebuild')).each(function(stop) {
+						stop.disabled = 'disabled';
+					});
+					$A(getByName('start_rebuild')).each(function(start) {
+						start.disabled = '';
+					});
+				});
+
+				return false;
+			};
+		});
 	}
 
 	if (self.rebuild_queue.length == 0) {
@@ -182,8 +365,11 @@ ToIMT.prototype.rebuild_all = function() {
 };
 
 /* Rebuild blogs in queue. */
-ToIMT.prototype.do_rebuild = function() {
+ToIMT.prototype.do_rebuild = function(onComplete) {
 	if (this.rebuild_queue.length == 0) {
+		if (onComplete) {
+			onComplete();
+		}
 		return;
 	}
 
@@ -191,7 +377,7 @@ ToIMT.prototype.do_rebuild = function() {
 	this.rebuild_blog(
 		this.rebuild_queue.shift(),
 		function (html) {
-			self.do_rebuild();
+			self.do_rebuild(onComplete);
 		}
 	);
 }
@@ -230,7 +416,7 @@ ToIMT.prototype.fetch_blog_info = function(blog, onComplete) {
 				return onComplete();
 			}
 		}
-		setTimeout(wait, 200);
+		return setTimeout(wait, 200);
 	}
 	wait();
 }
@@ -264,6 +450,10 @@ ToIMT.prototype.rebuild_blog = function(blog, onComplete) {
 			window.open(url, self.frame.name);
 
 			function wait() {
+				if (self.stopped) {
+					return false;
+				}
+
 				if (
 					(self.frame.contentWindow) &&
 					(self.frame.contentWindow.document)
@@ -284,7 +474,7 @@ ToIMT.prototype.rebuild_blog = function(blog, onComplete) {
 								}
 								else {
 									elm.onclick = function() {
-										closeDialog();
+										closeDialog ? closeDialog() : window.close();
 										return false;
 									};
 								}
@@ -308,10 +498,22 @@ ToIMT.prototype.rebuild_blog = function(blog, onComplete) {
 					if (error) {
 						error.id = 'hide_message';
 
-						alert(error.innerHTML.replace(/.*<\/a>/, '').strip().unescapeHTML());
+						li.style.textDecoration = '';
+						li.style.fontWeight = 'bold';
+						li.style.color = 'red';
+						var li_nodes = li.childNodes;
+						var i;
+						for (i = 0; i < li_nodes.length; i++) {
+							if (li_nodes[i].className == 'rebuild_error') {
+								li_nodes[i].style.display = '';
+								li_nodes[i].innerHTML = error.innerHTML.replace(/.*<\/a>/, '').strip().unescapeHTML();
+							}
+						}
+
+						return onComplete();
 					}
 				}
-				setTimeout(wait, 500);
+				return setTimeout(wait, 500);
 			}
 			wait();
 		}
@@ -332,44 +534,62 @@ ToIMT.prototype.list_blogs = function(onListed) {
 	var self = this;
 
 	this.log('fetching blog list start.');
-	var url = self.mt_cgi + '?__mode=list_blogs';
-	window.open(url, self.frame.name);
 
 	self.message_frame.contentWindow.document.open();
 	self.message_frame.contentWindow.document.write('Listing blgos...');
 
-	function inner() {
+	var blogs = [];
+
+	function inner(offset) {
 		if (
-			(! self.frame.contentWindow) ||
-			(! self.frame.contentWindow.document) ||
-			(! self.frame.contentWindow.document.getElementById('blog-listing-table'))
+			self.frame.contentWindow && self.frame.contentWindow.document
 		) {
-			setTimeout(inner, 1000);
-			return;
+			self.frame.contentWindow.document.open();
+			self.frame.contentWindow.document.close();
 		}
 
-		var blogs = [];
+		var url = self.mt_cgi + '?__mode=list_blogs&offset=' + offset;
+		window.open(url, self.frame.name);
 
-		var table = self.frame.contentWindow.document.getElementById(
-			'blog-listing-table'
-		);
-		var tbody = table.getElementsByTagName('tbody')[0];
-		$A(tbody.getElementsByTagName('tr')).each(function(row) {
-			var cols = $A(row.getElementsByTagName('td'));
-			var blog = {};
-			blog['id'] = cols[0].getElementsByTagName('input')[0].value;
-			blog['name'] = cols[1].getElementsByTagName('a')[0].innerHTML;
-			blogs.push($H(blog));
-		});
+		function inner2() {
+			if (
+				(! self.frame.contentWindow) ||
+				(! self.frame.contentWindow.document) ||
+				(! self.frame.contentWindow.document.getElementById('footer'))
+			) {
+				setTimeout(inner2, 1000);
+				return;
+			}
 
-		self.log('fetching blog list done');
-		self.message_frame.contentWindow.document.write('done.');
-		self.message_frame.contentWindow.document.close();
+			var table = self.frame.contentWindow.document.getElementById(
+				'blog-listing-table'
+			);
 
-		onListed(blogs);
+			if (table) {
+				var tbody = table.getElementsByTagName('tbody')[0];
+				$A(tbody.getElementsByTagName('tr')).each(function(row) {
+					var cols = $A(row.getElementsByTagName('td'));
+					var blog = {};
+					blog['id'] = cols[0].getElementsByTagName('input')[0].value;
+					blog['name'] = cols[1].getElementsByTagName('a')[0].innerHTML;
+					blogs.push($H(blog));
+				});
+
+				inner(blogs.length);
+			}
+			else {
+				self.log('fetching blog list done');
+				self.message_frame.contentWindow.document.write('done.');
+				self.message_frame.contentWindow.document.close();
+
+				onListed(blogs);
+			}
+		}
+
+		inner2();
 	}
 
-	inner();
+	inner(0);
 };
 
 var mt_rebuild_rebuild_queue;
