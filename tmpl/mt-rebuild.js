@@ -80,21 +80,19 @@ function mt_rebuild(param) {
 /* Instance of MT */
 function ToIMT (param) {
 	this.Version = '0.1';
-	(function(self) {
+	this.Tag = (function() {
 		var ss = document.getElementsByTagName("script");
-		var re = new RegExp(/github\.com\/([^\/]*)\/mt-rebuild\/raw\/([^\/]*)\/mt-rebuild.js/);
+		var re = new RegExp(/\/quickrebuild-mtplugin\.googlecode\.com\/svn\/tags\/([^\/])*\/tmpl\/mt-reguild.js/);
 		var i;
 		for(i = 0; i < ss.length; i++) {
 			s = ss[i];
-			if (s.src) {
-				var m = s.src.match(re);
-				if (m) {
-					self.developper = m[1];
-					self.id = m[2];
-				}
+			m = re.exec(s.src);
+			if (m) {
+				m[1];
 			}
 		}
-	})(this);
+		return '';
+	})();
 
 	for(k in param) {
 		this[k] = param[k];
@@ -167,21 +165,19 @@ function ToIMT (param) {
 /* Checking a new version */
 ToIMT.prototype.check_version = function(onUpdated) {
 	var self = this;
-	if (! this.id) {
+	if (! this.Tag) {
 		return false;
 	}
 
-	window.ToIMT_check_version_callback = function(obj) {
-		var id = obj['commits'][0]['id'];
-		if (obj['commits'][0]['id'] != self.id) {
-			onUpdated(id);
-		}
+	window.ToIMT_loaded_tag = self.Tag;
+	window.ToIMT_updated_callback = function(tag) {
+		onUpdated(tag);
 	};
 
 	var s = document.createElement("script");
 	s.charset = "UTF-8";
 	s.type = 'text/javascript';
-	s.src = 'http://github.com/api/v2/json/commits/list/' + self.developper + '/mt-rebuild/master/mt-rebuild.js?callback=ToIMT_check_version_callback';
+	s.src = 'http://quickrebuild-mtplugin.googlecode.com/svn/trunk/tmpl/mt-rebuild-current-tag.js';
 	document.body.appendChild(s)
 
 	return false;
@@ -252,11 +248,11 @@ ToIMT.prototype.rebuild_all = function() {
 			}
 		}
 
-		self.check_version(function(id) {
+		self.check_version(function(tag) {
 			var div = getById('new_version');
 
 			var input = div.getElementsByTagName('input')[0];
-			input.value = 'javascript:(function(){var%20s=document.createElement(%22script%22);s.charset=%22UTF-8%22;s.type=%22text/javascript%22;s.src=%22http://github.com/' + self.developper + '/mt-rebuild/raw/' + id + '/mt-rebuild.js%22;document.body.appendChild(s)})();';
+			input.value = 'javascript:(function(){var%20s=document.createElement(%22script%22);s.charset=%22UTF-8%22;s.type=%22text/javascript%22;s.src=%22http://quickrebuild-mtplugin.googlecode.com/svn/tags/' + tag + '/tmpl/mt-rebuild.js%22;document.body.appendChild(s)})();';
 
 			var a = div.getElementsByTagName('a')[0];
 			a.target = '_blank';
