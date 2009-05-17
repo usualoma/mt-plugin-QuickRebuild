@@ -82,13 +82,13 @@ function ToIMT (param) {
 	this.Version = '0.1';
 	this.Tag = (function() {
 		var ss = document.getElementsByTagName("script");
-		var re = new RegExp(/\/quickrebuild-mtplugin\.googlecode\.com\/svn\/tags\/([^\/])*\/tmpl\/mt-reguild.js/);
+		var re = new RegExp('/quickrebuild-mtplugin\\.googlecode\\.com/svn/tags/([^/]*)/tmpl/mt-rebuild\\.js');
 		var i;
 		for(i = 0; i < ss.length; i++) {
-			s = ss[i];
-			m = re.exec(s.src);
+			var s = ss[i];
+			var m = re.exec(s.src);
 			if (m) {
-				m[1];
+				return m[1];
 			}
 		}
 		return '';
