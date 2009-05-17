@@ -208,7 +208,7 @@ ToIMT.prototype.rebuild_all = function() {
 			'</style>' +
 			'<form id="blogs" >' +
 			buttons +
-			'<div id="new_version" style="display: none"><a href="javascript: ;">New version of mt-rebuild is available here.</a><br /><input readonly="readonly" style="display: none;"/></div>' +
+			'<div id="new_version" style="display: none">mt-rebuild was updated. <a href="">Please set this link as bookmarknet.</a></div>' +
 			'<ul>' +
 			'<li><input type="checkbox" id="checkall" checked="checked" /></li>' +
 			list.map(function(b) {
@@ -251,13 +251,9 @@ ToIMT.prototype.rebuild_all = function() {
 		self.check_version(function(tag) {
 			var div = getById('new_version');
 
-			var input = div.getElementsByTagName('input')[0];
-			input.value = 'javascript:(function(){var%20s=document.createElement(%22script%22);s.charset=%22UTF-8%22;s.type=%22text/javascript%22;s.src=%22http://quickrebuild-mtplugin.googlecode.com/svn/tags/' + tag + '/tmpl/mt-rebuild.js%22;document.body.appendChild(s)})();';
-
 			var a = div.getElementsByTagName('a')[0];
-			a.target = '_blank';
+			a.href = 'javascript:(function(){var%20s=document.createElement(%22script%22);s.charset=%22UTF-8%22;s.type=%22text/javascript%22;s.src=%22http://quickrebuild-mtplugin.googlecode.com/svn/tags/' + tag + '/tmpl/mt-rebuild.js%22;document.body.appendChild(s)})();';
 			a.onclick = function() {
-				input.style.display = '';
 				return false;
 			};
 
