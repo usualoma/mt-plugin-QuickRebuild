@@ -123,6 +123,7 @@ function ToIMT (param) {
 	if (! this.frame) {
 		var toi_mt_rebuild_window = $$('iframe[name=ToIMTRebuildWindow]');
 		if (toi_mt_rebuild_window.length) {
+			this.called_by_plugin = true;
 			this.message_frame = toi_mt_rebuild_window[0];
 		}
 		else {
@@ -297,7 +298,7 @@ ToIMT.prototype.rebuild_all = function() {
 		$A(getByName('close_dialog')).each(function(close) {
 			close.onclick = function() {
 				stop_rebuild();
-				closeDialog ? closeDialog() : window.close();
+				self.called_by_plugin ? window.close() : closeDialog();
 				return false;
 			};
 		});
