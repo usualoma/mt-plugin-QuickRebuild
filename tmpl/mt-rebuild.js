@@ -265,7 +265,7 @@ ToIMT.prototype.rebuild_all = function() {
 			'</style>' +
 			'<form id="blogs" >' +
 			buttons +
-			'<div id="new_version" style="display: none">mt-rebuild was updated. <a href="">Please set this link as bookmarknet.</a></div>' +
+			'<div id="new_version" style="display: none">mt-rebuild was updated. <a href="">Please set this link as bookmarklet.</a></div>' +
 			'<ul>' +
 			checkall_html +
 			list.map(function(b) {
