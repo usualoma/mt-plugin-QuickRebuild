@@ -22,5 +22,7 @@ dist:
 	find /tmp/${BASENAME}/plugins/${PKGNAME} -type d -name '.svn' -or -name '.git' | xargs rm -fr
 	rm -f /tmp/${BASENAME}/plugins/${PKGNAME}/Makefile
 	mv /tmp/${BASENAME}/plugins/${PKGNAME}/LICENSE /tmp/${BASENAME}/
+	mkdir -p /tmp/${BASENAME}/mt-static/plugins
+	mv /tmp/${BASENAME}/plugins/${PKGNAME}/static /tmp/${BASENAME}/mt-static/plugins/${PKGNAME}
 	tar zcf /tmp/${BASENAME}.tgz -C /tmp ${BASENAME}
 	(cd /tmp; zip -qr ${BASENAME}.zip ${BASENAME})
