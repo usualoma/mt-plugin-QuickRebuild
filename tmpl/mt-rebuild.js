@@ -63,6 +63,26 @@ if (typeof Prototype === 'undefined') {
 	})();
 }
 
+var quickrebuild_mt_version = 5;
+if (typeof(jQuery) == 'undefined') {
+	quickrebuild_mt_version = 4;
+}
+
+/* closeDialog */
+function mt_rebuild_close_dialog() {
+	if (quickrebuild_mt_version <= 4) {
+		closeDialog();
+	}
+	else {
+		var win = parent;
+		if (! parent) {
+			win = window;
+		}
+
+		win.jQuery.fn.mtDialog.close();
+	}
+}
+
 /* Rebuilding */
 function mt_rebuild(param) {
 	function inner() {
@@ -72,7 +92,9 @@ function mt_rebuild(param) {
 		}
 
 		var mt = new ToIMT(param);
-		mt.rebuild_all();
+		setTimeout(function() {
+			mt.rebuild_all();
+		}, 10);
 	}
 	inner();
 }
@@ -141,7 +163,27 @@ function ToIMT (param) {
 				document.body.appendChild(this.message_frame);
 			}
 
-			openDialog(false, '');
+			try {
+				openDialog(false, '');
+			}
+			catch(e) {
+				jQuery('<a />').
+					attr('href', ScriptURI + '?__mode=unkown').
+					insertAfter('#footer').
+					mtDialog().
+					trigger('click');
+				var self = this;
+				function get_quickrebuild_message_frame() {
+					var frame;
+					if (frame = $('mt-dialog-iframe')) {
+						self.message_frame = frame;
+					}
+					else {
+						setTimeout(get_quickrebuild_message_frame, 100);
+					}
+				}
+				setTimeout(get_quickrebuild_message_frame, 1);
+			}
 		}
 
 		var exec_frame = $$('iframe[name=mt_rebuild_js_exec_frame]');
@@ -188,9 +230,18 @@ ToIMT.prototype.check_version = function(onUpdated) {
 ToIMT.prototype.rebuild_all = function() {
 	var self = this;
 	function onListed(list) {
-		var i;
+		var i, j;
+		var flist = [];
 		for (i = 0; i < list.length; i++) {
 			list[i] = $H(list[i]);
+			var blogs = list[i].get('blogs');
+			if (blogs && blogs.length) {
+				for (var j = 0; j < blogs.length; j++) {
+					blogs[j] = $H(blogs[j]);
+					flist.push(blogs[j]);
+				}
+			}
+			flist.push(list[i]);
 		}
 
 		var buttons =
@@ -199,6 +250,11 @@ ToIMT.prototype.rebuild_all = function() {
 			'<input type="submit" value="Stop" name="stop_rebuild" disabled="disabled" />' +
 			'&nbsp;' +
 			'<input type="submit" value="Close" name="close_dialog" />';
+
+		var checkall_html = '';
+		if (list.length >= 2) {
+			checkall_html = '<li><input type="checkbox" id="checkall" checked="checked" /></li>';
+		}
 
 		self.message_frame.contentWindow.document.open();
 		self.message_frame.contentWindow.document.write(
@@ -211,16 +267,36 @@ ToIMT.prototype.rebuild_all = function() {
 			buttons +
 			'<div id="new_version" style="display: none">mt-rebuild was updated. <a href="">Please set this link as bookmarknet.</a></div>' +
 			'<ul>' +
-			'<li><input type="checkbox" id="checkall" checked="checked" /></li>' +
+			checkall_html +
 			list.map(function(b) {
+				var id = 'rebuild_' + b.get('id');
+
+				var s = '';
+				var blogs = b.get('blogs');
+				if (blogs && blogs.length) {
+					s = '<ul id="' + id + '_list">' + blogs.map(function(b) {
+						return [ '<li id="', b.get('id'), '">',
+							'<input type="checkbox" name="rebuild_', b.get('id'), '" />&nbsp;',
+							b.get('name'),
+							' <a href="', self.mt_cgi, '?blog_id=', b.get('id'), '" target="_blank">Home</a>',
+							' <a href="', self.mt_cgi, '?__mode=list&_type=template&blog_id=', b.get('id'), '" target="_blank">Design</a>',
+							' <span class="rebuild_doing" style="display: none" >Rebuilding...</span> ',
+							' <span class="rebuild_success" style="display: none" >Done</span> ',
+							' <span class="rebuild_error" style="display: none" ></span> ',
+							'</li>'
+						].join('');
+					}).join('') + '</ul>';
+				}
+
 				return [ '<li id="', b.get('id'), '">',
-					'<input type="checkbox" name="rebuild_', b.get('id'), '" />&nbsp;',
+					'<input type="checkbox" name="' + id + '" id="' + id + '" />&nbsp;',
 					b.get('name'),
 					' <a href="', self.mt_cgi, '?blog_id=', b.get('id'), '" target="_blank">Home</a>',
 					' <a href="', self.mt_cgi, '?__mode=list&_type=template&blog_id=', b.get('id'), '" target="_blank">Design</a>',
 					' <span class="rebuild_doing" style="display: none" >Rebuilding...</span> ',
 					' <span class="rebuild_success" style="display: none" >Done</span> ',
 					' <span class="rebuild_error" style="display: none" ></span> ',
+					s,
 					'</li>'
 				].join('');
 			}).join('') +
@@ -265,12 +341,28 @@ ToIMT.prototype.rebuild_all = function() {
 		function all_clicked() {
 			forAllInput(function(i) {
 				if (i.name.match(/^rebuild_\d+$/)) {
-					i.checked = all.checked;
+					i.checked = all ? all.checked : 'checked';
 				}
 			});
 		};
-		all.onchange = all_clicked;
+		if (all) {
+			all.onchange = all_clicked;
+		}
 		all_clicked();
+
+		list.each(function(b) {
+			var id = 'rebuild_' + b.get('id');
+			var checkbox = getById(id);
+			checkbox.onclick = function(ev) {
+				var list = getById(id + '_list');
+				if (list) {
+					var elms = list.getElementsByTagName('input');
+					for (var i = 0; i < elms.length; i++) {
+						elms[i].checked = checkbox.checked;
+					}
+				}
+			};
+		});
 
 		function stop_rebuild() {
 			if (
@@ -298,7 +390,7 @@ ToIMT.prototype.rebuild_all = function() {
 		$A(getByName('close_dialog')).each(function(close) {
 			close.onclick = function() {
 				stop_rebuild();
-				self.called_by_plugin ? window.close() : closeDialog();
+				self.called_by_plugin ? window.close() : mt_rebuild_close_dialog();
 				return false;
 			};
 		});
@@ -308,7 +400,7 @@ ToIMT.prototype.rebuild_all = function() {
 				self.stopped = false;
 
 				var f = getById('blogs');
-				var queue = list.map(function(b) {
+				var queue = flist.map(function(b) {
 					var li = getById(b.get('id'));
 					li.style.textDecoration = '';
 					li.style.fontWeight = '';
@@ -350,7 +442,7 @@ ToIMT.prototype.rebuild_all = function() {
 	}
 
 	if (self.rebuild_queue.length == 0) {
-		this.list_blogs(onListed);
+		this.list_websites(onListed);
 	}
 	else {
 		onListed(this.rebuild_queue);
@@ -522,16 +614,24 @@ ToIMT.prototype.rebuild_blog = function(blog, onComplete) {
 	inner();
 };
 
-/* Listing blogs */
-ToIMT.prototype.list_blogs = function(onListed) {
+/* Listing website */
+ToIMT.prototype.list_websites = function(onListed) {
 	var self = this;
 
-	this.log('fetching blog list start.');
+	this.log('fetching website list start.');
 
 	self.message_frame.contentWindow.document.open();
-	self.message_frame.contentWindow.document.write('Listing blgos...');
+	self.message_frame.contentWindow.document.write('Listing blogs...');
+	self.message_frame.contentWindow.document.close();
 
-	var blogs = [];
+	var sites = [];
+
+	var mode = 'list_website';
+	var table_id = 'website-listing-table';
+	if (quickrebuild_mt_version <= 4) {
+		mode = 'list_blogs';
+		table_id = 'blog-listing-table';
+	}
 
 	function inner(offset) {
 		if (
@@ -541,8 +641,78 @@ ToIMT.prototype.list_blogs = function(onListed) {
 			self.frame.contentWindow.document.close();
 		}
 
-		var url = self.mt_cgi + '?__mode=list_blogs&offset=' + offset;
+		var url = self.mt_cgi + '?__mode=' + mode + '&offset=' + offset;
 		window.open(url, self.frame.name);
+
+		function inner2() {
+			if (
+				(! self.frame.contentWindow) ||
+				(! self.frame.contentWindow.document) ||
+				(! self.frame.contentWindow.document.getElementById('footer'))
+			) {
+				setTimeout(inner2, 1000);
+				return;
+			}
+
+			var table = self.frame.contentWindow.document.getElementById(
+				table_id
+			);
+
+			if (table) {
+				var tbody = table.getElementsByTagName('tbody')[0];
+				$A(tbody.getElementsByTagName('tr')).each(function(row) {
+					var cols = $A(row.getElementsByTagName('td'));
+					var site = {};
+					site['id'] = cols[0].getElementsByTagName('input')[0].value;
+					site['name'] = cols[1].getElementsByTagName('a')[0].innerHTML;
+					sites.push($H(site));
+				});
+
+				inner(sites.length);
+			}
+			else {
+				self.log('fetching website list done');
+
+				if (quickrebuild_mt_version <= 4) {
+					onListed(sites);
+				}
+				else {
+					self.list_blogs(sites, onListed);
+				}
+			}
+		}
+
+		inner2();
+	}
+
+	inner(0);
+};
+
+/* Listing blogs */
+ToIMT.prototype.list_blogs = function(sites, onListed) {
+	var self = this;
+
+	self.log('fetching blog list start.');
+
+	function inner(site_index, offset) {
+		if (
+			self.frame.contentWindow && self.frame.contentWindow.document
+		) {
+			self.frame.contentWindow.document.open();
+			self.frame.contentWindow.document.close();
+		}
+
+		var url = self.mt_cgi + '?__mode=list_blog&blog_id=' +
+			sites[site_index].get('id') + '&offset=' + offset;
+		window.open(url, self.frame.name);
+
+		var blogs = [];
+		if (offset == 0) {
+			sites[site_index].set('blogs', blogs);
+		}
+		else {
+			blogs = sites[site_index].get('blogs');
+		}
 
 		function inner2() {
 			if (
@@ -568,21 +738,25 @@ ToIMT.prototype.list_blogs = function(onListed) {
 					blogs.push($H(blog));
 				});
 
-				inner(blogs.length);
+				sites[site_index].set('blogs', blogs);
+				inner(site_index, blogs.length);
+			}
+			else if (site_index+1 < sites.length) {
+				inner(site_index+1, 0);
 			}
 			else {
 				self.log('fetching blog list done');
 				self.message_frame.contentWindow.document.write('done.');
 				self.message_frame.contentWindow.document.close();
 
-				onListed(blogs);
+				onListed(sites);
 			}
 		}
 
 		inner2();
 	}
 
-	inner(0);
+	inner(0, 0);
 };
 
 var mt_rebuild_rebuild_queue;

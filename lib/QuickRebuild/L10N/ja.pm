@@ -47,6 +47,7 @@ use vars qw( %Lexicon );
 	'Only Category Monthly Archives' => 'カテゴリ-月別アーカイブのみ',
 	'Only Monthly Archives' => '月別アーカイブのみ',
 	'Only Page Archives' => 'ウェブページアーカイブのみ',
+	'Only Individual Archives' => 'ブログ記事アーカイブのみ',
 	'Only Entry Archives' => 'ブログ記事アーカイブのみ',
 );
 

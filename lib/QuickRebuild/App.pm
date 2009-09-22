@@ -32,24 +32,20 @@
 package QuickRebuild::App;
 use strict;
 
+use File::Basename;
+
 sub template_source_header {
+	if (MT->version_number >= 5) {
+		&template_source_header_5;
+	}
+	else {
+		&template_source_header_4;
+	}
+}
+
+sub template_source_header_4 {
 	my ($cb, $app, $tmpl) = @_;
 	my $plugin = $app->component('QuickRebuild');
-
-	if (0) {
-		my $new_tmpl = <<'__EOH__';
-							<li id="quick-rebuild-site" class="nav-link"><a href="javascript:void(0)" title="<__trans phrase="Quick Publish Site">" onclick="window.open('<$mt:var name="mt_url"$>?__mode=rebuild_confirm&amp;blog_id=<$mt:var name="blog_id"$>&amp;quick_rebuild=1', 'quick_rebuild', 'width=400,height=400,resizable=yes'); return false">QR</a></li>
-__EOH__
-
-		my $new = $plugin->translate_templatized($new_tmpl);
-		my $old = '<li id="rebuild-site" class="nav-link">';
-
-		$$tmpl =~ s/($old)/$new\n$old/;
-	}
-
-	if (0) {
-		$$tmpl =~ s/<li\s*id="rebuild-site"(.|\n|\r)*?<\/li>//i;
-	}
 
 	my $rebuld_script = <<'__EOS__';
 <script type="text/javascript">
@@ -105,6 +101,58 @@ __EOH__
 
 		my $new = $plugin->translate_templatized($new_tmpl);
 		$$tmpl =~ s/(id="view-site"(.|\r|\n)*?)(<\/ul>)/$1$new$2/si;
+	}
+
+	$$tmpl;
+}
+
+sub template_source_header_5 {
+	my ($cb, $app, $tmpl) = @_;
+	my $plugin = $app->component('QuickRebuild');
+	my $blog = $app->blog;
+
+	if (! $blog || $blog->class eq 'website' || 1) {
+		if ($blog && $blog->is_blog) {
+			$blog = $blog->website;
+		}
+
+		my $static = $app->static_path;
+		my $plugin_name = basename($plugin->{full_path});
+		my $dir = basename(dirname($plugin->{full_path}));
+		my $blog_id = $blog ? ('&blog_id=' . $blog->id) : '';
+		my $rebuld_script = <<__EOS__;
+<script type="text/javascript">
+if (typeof(jQuery) != 'undefined') {
+jQuery(function(j) {
+
+var list = j('#menu-bar-list');
+if (list.length == 0) {
+	j('#menu-bar').append('<ul id="menu-bar-list"></ul>');
+	list = j('#menu-bar-list');
+}
+
+list.prepend(
+	'<li id="rebuild-site" class="nav-link"><a href="#" title="<__trans phrase="Rebuild all blog">" id="quick_rebuild_all" style="background-image: url(' + "'${static}${dir}/${plugin_name}/images/nav-icon-power-publish.png'" + ');"><span><__trans phrase="Publish"></span></a></li>'
+);
+
+j('#quick_rebuild_all').click(function(ev) {
+	ev.preventDefault();
+	ev.stopPropagation();
+
+	window.open(
+		'<mt:var name="mt_url" />?__mode=quick_rebuild_all$blog_id',
+		'quick_rebuild',
+		'width=400,height=400,resizable=yes'
+	);
+});
+
+
+});
+}
+</script>
+__EOS__
+
+		$$tmpl .= $plugin->translate_templatized($rebuld_script);
 	}
 
 	$$tmpl;
@@ -208,6 +256,61 @@ sub rebuild_all_blog_js {
 }
 
 sub quick_rebuild_all {
+	if (MT->version_number >= 5) {
+		&quick_rebuild_all_5;
+	}
+	else {
+		&quick_rebuild_all_4;
+	}
+}
+
+sub quick_rebuild_all_5 {
+    my $app = shift;
+    my ($param) = @_;
+    $param ||= {};
+
+	my $website_terms = undef;
+	if (my $blog_id = $app->param('blog_id')) {
+		$website_terms = { 'id' => $blog_id };
+	}
+
+	my $sites = [];
+	my $iter = MT->model('website')->load_iter(
+		$website_terms,
+		{
+			'sort' => 'id',
+		}
+	);
+	while (my $site = $iter->()) {
+		if ($app->user->blog_perm($site->id)->can_rebuild) {
+			my $blogs = [];
+			my $iter = MT->model('blog')->load_iter({
+				'parent_id' => $site->id,
+			});
+			while (my $blog = $iter->()) {
+				if ($app->user->blog_perm($blog->id)->can_rebuild) {
+					push(@$blogs, $blog);
+				}
+			}
+
+			push(@$sites, {
+				'id' => $site->id,
+				'name' => $site->name,
+				'blogs' => $blogs,
+			});
+		}
+	}
+	$param->{'sites'} = $sites;
+
+	my $plugin = MT->component('QuickRebuild');
+	my $edit_tmpl = File::Spec->catdir(
+		$plugin->{full_path}, 'tmpl', 'quick_rebuild_all_5.tmpl'
+	);
+
+	$app->load_tmpl($edit_tmpl, $param);
+}
+
+sub quick_rebuild_all_4 {
     my $app = shift;
     my ($param) = @_;
     $param ||= {};
@@ -228,7 +331,7 @@ sub quick_rebuild_all {
 
 	my $plugin = MT->component('QuickRebuild');
 	my $edit_tmpl = File::Spec->catdir(
-		$plugin->{full_path}, 'tmpl', 'quick_rebuild_all.tmpl'
+		$plugin->{full_path}, 'tmpl', 'quick_rebuild_all_4.tmpl'
 	);
 
 	$app->load_tmpl($edit_tmpl, $param);
