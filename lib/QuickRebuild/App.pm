@@ -125,7 +125,7 @@ sub template_source_header_5 {
 if (typeof(jQuery) != 'undefined') {
 jQuery(function(j) {
 
-var list = j('#menu-bar-list');
+var list = j('#menu-bar-icons');
 if (list.length == 0) {
 	j('#menu-bar').append('<ul id="menu-bar-list"></ul>');
 	list = j('#menu-bar-list');
@@ -146,6 +146,16 @@ j('#quick_rebuild_all').click(function(ev) {
 	);
 });
 
+j('#menu-quickrebuild a').click(function(ev) {
+	ev.preventDefault();
+	ev.stopPropagation();
+
+	window.open(
+		this.href,
+		'quick_rebuild',
+		'width=400,height=400,resizable=yes'
+	);
+});
 
 });
 }
@@ -370,9 +380,11 @@ sub init_app {
 			$phrase =~ s/(?<=[a-z])([A-Z])/ $1/g;
 
 			$menus->{'quickrebuild:' . $k} = {
-				label => $app->translate(
-					'Only [_1] Archives', $app->translate($phrase)
-				),
+				label => sub {
+					$app->translate(
+						'Only [_1] Archives', $app->translate($phrase)
+					);
+				},
 				order => $order,
 				mode => 'rebuild_confirm',
 				args => {
