@@ -167,11 +167,9 @@ function ToIMT (param) {
 				openDialog(false, '');
 			}
 			catch(e) {
-				jQuery('<a />').
-					attr('href', ScriptURI + '?__mode=unkown').
-					insertAfter('#footer').
-					mtDialog().
-					trigger('click');
+				jQuery.fn.mtDialog.open(
+					ScriptURI + '?__mode=unkown'
+				);
 				var self = this;
 				function get_quickrebuild_message_frame() {
 					var frame;
