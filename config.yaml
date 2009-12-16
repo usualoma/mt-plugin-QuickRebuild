@@ -43,9 +43,8 @@ doc_link: http://tec.toi-planning.net/mt/quickrebuild/
 #Localization
 l10n_class: QuickRebuild::L10N
 
-init_app: QuickRebuild::App::init_app
-
 callbacks:
+    MT::App::CMS::init_request: QuickRebuild::App::init_request
     MT::App::CMS::template_source.header: QuickRebuild::App::template_source_header
     MT::App::CMS::template_source.rebuild_confirm: QuickRebuild::App::template_source_rebuild_confirm
     MT::App::CMS::template_source.rebuilt: QuickRebuild::App::template_source_rebuilt

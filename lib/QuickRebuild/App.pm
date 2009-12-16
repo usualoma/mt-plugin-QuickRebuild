@@ -347,25 +347,21 @@ sub quick_rebuild_all_4 {
 	$app->load_tmpl($edit_tmpl, $param);
 }
 
-sub init_app {
-	my ($plugin, $app) = @_;
+sub init_request {
+	my ($cb, $app) = @_;
+	my $plugin = $cb->{plugin};
 
-	require CGI;
-	my $q = new CGI;
-	my $blog_id = $q->param('blog_id')
+    my $blog = $app->blog
 		or return;
 
-    require MT::Blog;
-    my $blog = MT::Blog->load($blog_id);
     my $at = $blog->archive_type || '';
 
 	if ( $at && $at ne 'None' ) {
 		$at = ',' . $at . ',';
 
-		my $menus = $plugin->{registry}->{applications}->{cms}->{menus};
+		my $menus = $plugin->registry('applications', 'cms', 'menus');
 
 		require MT::WeblogPublisher;
-		#my $types = MT::WeblogPublisher::core_archive_types;
 		my $types = MT::WeblogPublisher->core_archive_types;
 		my $order = 200;
 		foreach my $k (keys(%$types)) {
