@@ -31,7 +31,7 @@
 
 #plugin name
 name: QuickRebuild
-version: 0.5.4
+version: 0.5.5
 
 #about this plugin
 description: <__trans phrase="Rebuild quickly">
