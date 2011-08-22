@@ -275,7 +275,7 @@ ToIMT.prototype.rebuild_all = function() {
 					s = '<ul id="' + id + '_list">' + blogs.map(function(b) {
 						return [ '<li id="', b.get('id'), '">',
 							'<input type="checkbox" name="rebuild_', b.get('id'), '" />&nbsp;',
-							b.get('name'),
+							b.get('name').escapeHTML(),
 							' <a href="', self.mt_cgi, '?blog_id=', b.get('id'), '" target="_blank">Home</a>',
 							' <a href="', self.mt_cgi, '?__mode=list&_type=template&blog_id=', b.get('id'), '" target="_blank">Design</a>',
 							' <span class="rebuild_doing" style="display: none" >Rebuilding...</span> ',
