@@ -313,11 +313,7 @@ sub quick_rebuild_all_5 {
 	$param->{'sites'} = $sites;
 
 	my $plugin = MT->component('QuickRebuild');
-	my $edit_tmpl = File::Spec->catdir(
-		$plugin->{full_path}, 'tmpl', 'quick_rebuild_all_5.tmpl'
-	);
-
-	$app->load_tmpl($edit_tmpl, $param);
+	$plugin->load_tmpl('quick_rebuild_all_5.tmpl', $param);
 }
 
 sub quick_rebuild_all_4 {
