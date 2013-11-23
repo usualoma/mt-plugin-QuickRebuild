@@ -343,50 +343,42 @@ sub quick_rebuild_all_4 {
 	$app->load_tmpl($edit_tmpl, $param);
 }
 
-sub init_request {
-	my ($cb, $app) = @_;
-	my $plugin = $cb->{plugin};
+sub init_app {
+    my ( $cb, $app ) = @_;
+    my $plugin = MT->component('QuickRebuild');
 
-    my $blog = $app->blog
-		or return;
+    my $menus = $plugin->registry( 'applications', 'cms', 'menus' );
 
-    my $at = $blog->archive_type || '';
+    require MT::WeblogPublisher;
+    my $types = MT::WeblogPublisher->core_archive_types;
+    my $order = 200;
+    foreach my $k ( keys(%$types) ) {
+        my $t = $types->{$k};
 
-	if ( $at && $at ne 'None' ) {
-		$at = ',' . $at . ',';
+        my $phrase = ( ref $t ) ? $t->{name} : $t;
+        $phrase =~ s/.*:://;
+        $phrase =~ s/-/ /;
+        $phrase =~ s/(?<=[a-z])([A-Z])/ $1/g;
 
-		my $menus = $plugin->registry('applications', 'cms', 'menus');
-
-		require MT::WeblogPublisher;
-		my $types = MT::WeblogPublisher->core_archive_types;
-		my $order = 200;
-		foreach my $k (keys(%$types)) {
-			if ($at !~ m/,$k,/) {
-				next;
-			}
-			my $t = $types->{$k};
-
-			my $phrase = (ref $t) ? $t->{name} : $t;
-			$phrase =~ s/.*:://;
-			$phrase =~ s/-/ /;
-			$phrase =~ s/(?<=[a-z])([A-Z])/ $1/g;
-
-			$menus->{'quickrebuild:' . $k} = {
-				label => sub {
-					$app->translate(
-						'Only [_1] Archives', $app->translate($phrase)
-					);
-				},
-				order => $order,
-				mode => 'rebuild_confirm',
-				args => {
-					'quick_rebuild' => 1,
-					'quick_rebuild_type', => $k,
-				},
-			};
-			$order += 100;
-		}
-	}
+        $menus->{ 'quickrebuild:' . $k } = {
+            label => sub {
+                $app->translate( 'Only [_1] Archives',
+                    $app->translate($phrase) );
+            },
+            order => $order,
+            mode  => 'rebuild_confirm',
+            args  => {
+                'quick_rebuild'       => 1,
+                'quick_rebuild_type', => $k,
+            },
+            view      => [qw(website blog)],
+            condition => sub {
+                my $at = MT->instance->blog->archive_type || '';
+                $at =~ m/(^|,)$k(,|$)/;
+            },
+        };
+        $order += 100;
+    }
 }
 
 1;
