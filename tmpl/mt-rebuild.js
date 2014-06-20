@@ -119,26 +119,14 @@ function ToIMT (param) {
 	for(k in param) {
 		this[k] = param[k];
 	}
-	if (! this.log) {
-		if(navigator.userAgent.indexOf('Safari') != -1){ 
-			this.log = function (str) { ; };
-		}
-		else if (
-			(typeof console !== 'undefined') &&
-			(typeof console.log !== 'undefined')
+	this.log = function(message) {
+		if (
+				(typeof console !== 'undefined') &&
+				(typeof console.log !== 'undefined')
 		) {
-			this.log = console.log;
+			console.log(message);
 		}
-		else if (
-			(typeof opera !== 'undefined') &&
-			(typeof opera.postError !== 'undefined')
-		) {
-			this.log = opera.postError;
-		}
-		else {
-			this.log = function (str) { ; };
-		}
-	}
+	};
 	if (! this.mt_cgi) {
 		this.mt_cgi = window.location.href.sub(/\?.*/, '');
 	}
