@@ -52,7 +52,7 @@ if (typeof Prototype === 'undefined') {
 			}
 		}
 		else {
-			base_url = 'http://ajax.googleapis.com/ajax/libs/prototype/1.6.0.2/';
+			base_url = '//ajax.googleapis.com/ajax/libs/prototype/1.6.0.2/';
 		}
 
 		var s = document.createElement("script");
@@ -206,7 +206,7 @@ ToIMT.prototype.check_version = function(onUpdated) {
 	var s = document.createElement("script");
 	s.charset = "UTF-8";
 	s.type = 'text/javascript';
-	s.src = 'http://quickrebuild-mtplugin.googlecode.com/svn/trunk/tmpl/mt-rebuild-current-tag.js';
+	s.src = '//quickrebuild-mtplugin.googlecode.com/svn/trunk/tmpl/mt-rebuild-current-tag.js';
 	document.body.appendChild(s)
 
 	return false;
@@ -315,7 +315,7 @@ ToIMT.prototype.rebuild_all = function() {
 			var div = getById('new_version');
 
 			var a = div.getElementsByTagName('a')[0];
-			a.href = 'javascript:(function(){var%20s=document.createElement(%22script%22);s.charset=%22UTF-8%22;s.type=%22text/javascript%22;s.src=%22http://quickrebuild-mtplugin.googlecode.com/svn/tags/' + tag + '/tmpl/mt-rebuild.js%22;document.body.appendChild(s)})();';
+			a.href = 'javascript:(function(){var%20s=document.createElement(%22script%22);s.charset=%22UTF-8%22;s.type=%22text/javascript%22;s.src=%22//quickrebuild-mtplugin.googlecode.com/svn/tags/' + tag + '/tmpl/mt-rebuild.js%22;document.body.appendChild(s)})();';
 			a.onclick = function() {
 				return false;
 			};
