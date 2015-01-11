@@ -620,58 +620,40 @@ ToIMT.prototype.list_websites = function(onListed) {
 	}
 
 	function inner(offset) {
-		if (
-			self.frame.contentWindow && self.frame.contentWindow.document
-		) {
-			self.frame.contentWindow.document.open();
-			self.frame.contentWindow.document.close();
-		}
+        jQuery.ajax({
+            type: 'POST',
+            url: CMSScriptURI,
+            data: {
+                __mode: "filtered_list",
+                datasource: "website",
+                blog_id: "0",
+                columns: "name",
+                limit: "50",
+                page: offset,
+                magic_token: jQuery('input[name="magic_token"]').val(),
+                sort_by: "name",
+                sort_order: "ascend",
+                fid: "_allpass",
+            }
+        })
+        .done(function(data) {
+            jQuery.each(data.result.objects, function() {
+                sites.push($H({
+                    id: this[0],
+                    name: jQuery(this[1]).text()
+                }));
+            });
 
-		var url = self.mt_cgi + '?__mode=' + mode + '&offset=' + offset;
-		window.open(url, self.frame.name);
-
-		function inner2() {
-			if (
-				(! self.frame.contentWindow) ||
-				(! self.frame.contentWindow.document) ||
-				(! self.frame.contentWindow.document.getElementById('footer'))
-			) {
-				setTimeout(inner2, 1000);
-				return;
-			}
-
-			var table = self.frame.contentWindow.document.getElementById(
-				table_id
-			);
-
-			if (table) {
-				var tbody = table.getElementsByTagName('tbody')[0];
-				$A(tbody.getElementsByTagName('tr')).each(function(row) {
-					var cols = $A(row.getElementsByTagName('td'));
-					var site = {};
-					site['id'] = cols[0].getElementsByTagName('input')[0].value;
-					site['name'] = cols[1].getElementsByTagName('a')[0].innerHTML;
-					sites.push($H(site));
-				});
-
-				inner(sites.length);
-			}
-			else {
-				self.log('fetching website list done');
-
-				if (quickrebuild_mt_version <= 4) {
-					onListed(sites);
-				}
-				else {
-					self.list_blogs(sites, onListed);
-				}
-			}
-		}
-
-		inner2();
+            if (parseInt(data.result.page, 10) !== parseInt(data.result.page_max, 10)) {
+                inner(parseInt(data.result.page, 10) + 1);
+            }
+            else {
+                self.list_blogs(sites, onListed);
+            }
+        });
 	}
 
-	inner(0);
+	inner(1);
 };
 
 /* Listing blogs */
@@ -681,68 +663,57 @@ ToIMT.prototype.list_blogs = function(sites, onListed) {
 	self.log('fetching blog list start.');
 
 	function inner(site_index, offset) {
-		if (
-			self.frame.contentWindow && self.frame.contentWindow.document
-		) {
-			self.frame.contentWindow.document.open();
-			self.frame.contentWindow.document.close();
-		}
-
-		var url = self.mt_cgi + '?__mode=list_blog&blog_id=' +
-			sites[site_index].get('id') + '&offset=' + offset;
-		window.open(url, self.frame.name);
-
 		var blogs = [];
-		if (offset == 0) {
+		if (offset == 1) {
 			sites[site_index].set('blogs', blogs);
 		}
 		else {
 			blogs = sites[site_index].get('blogs');
 		}
 
-		function inner2() {
-			if (
-				(! self.frame.contentWindow) ||
-				(! self.frame.contentWindow.document) ||
-				(! self.frame.contentWindow.document.getElementById('footer'))
-			) {
-				setTimeout(inner2, 1000);
-				return;
-			}
+        jQuery.ajax({
+            type: 'POST',
+            url: CMSScriptURI,
+            data: {
+                __mode: "filtered_list",
+                datasource: "blog",
+                blog_id: sites[site_index].id,
+                columns: "name",
+                limit: "50",
+                page: offset,
+                magic_token: jQuery('input[name="magic_token"]').val(),
+                sort_by: "name",
+                sort_order: "ascend",
+                fid: "_allpass",
+            }
+        })
+        .done(function(data) {
+            jQuery.each(data.result.objects, function() {
+                blogs.push($H({
+                    id: this[0],
+                    name: jQuery(this[1]).text()
+                }));
+            });
 
-			var table = self.frame.contentWindow.document.getElementById(
-				'blog-listing-table'
-			);
+            if (parseInt(data.result.page, 10) !== parseInt(data.result.page_max, 10)) {
+                inner(parseInt(data.result.page, 10) + 1);
+            }
+            else {
+			    if (site_index+1 < sites.length) {
+				    inner(site_index+1, 1);
+			    }
+			    else {
+				    self.log('fetching blog list done');
+				    self.message_frame.contentWindow.document.write('done.');
+				    self.message_frame.contentWindow.document.close();
 
-			if (table) {
-				var tbody = table.getElementsByTagName('tbody')[0];
-				$A(tbody.getElementsByTagName('tr')).each(function(row) {
-					var cols = $A(row.getElementsByTagName('td'));
-					var blog = {};
-					blog['id'] = cols[0].getElementsByTagName('input')[0].value;
-					blog['name'] = cols[1].getElementsByTagName('a')[0].innerHTML;
-					blogs.push($H(blog));
-				});
-
-				sites[site_index].set('blogs', blogs);
-				inner(site_index, blogs.length);
-			}
-			else if (site_index+1 < sites.length) {
-				inner(site_index+1, 0);
-			}
-			else {
-				self.log('fetching blog list done');
-				self.message_frame.contentWindow.document.write('done.');
-				self.message_frame.contentWindow.document.close();
-
-				onListed(sites);
-			}
-		}
-
-		inner2();
+				    onListed(sites);
+			    }
+            }
+        });
 	}
 
-	inner(0, 0);
+	inner(0, 1);
 };
 
 var mt_rebuild_rebuild_queue;
