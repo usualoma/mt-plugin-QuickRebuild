@@ -29,6 +29,7 @@
 		mt_rebuild_rebuild_queue.push({
 			id: '<mt:Var name="id" />',
 			name: '<mt:Var name="name" encode_js="1" />',
+			can_rebuild: '<mt:Var name="can_rebuild" encode_js="1" />',
 			blogs: [ <mt:Loop name="blogs" glue=",">{
 				id: '<mt:Var name="id" />',
 				name: '<mt:Var name="name" encode_js="1" />'

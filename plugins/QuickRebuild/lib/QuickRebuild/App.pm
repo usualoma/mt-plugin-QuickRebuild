@@ -292,21 +292,23 @@ sub quick_rebuild_all_5 {
 		}
 	);
 	while (my $site = $iter->()) {
-		if ($app->user->blog_perm($site->id)->can_rebuild) {
-			my $blogs = [];
-			my $iter = MT->model('blog')->load_iter({
-				'parent_id' => $site->id,
-			});
-			while (my $blog = $iter->()) {
-				if ($app->user->blog_perm($blog->id)->can_rebuild) {
-					push(@$blogs, $blog);
-				}
+		my $blogs = [];
+		my $iter = MT->model('blog')->load_iter({
+			'parent_id' => $site->id,
+		});
+		while (my $blog = $iter->()) {
+			if ($app->user->blog_perm($blog->id)->can_rebuild) {
+				push(@$blogs, $blog);
 			}
+		}
 
+		my $site_perm = $app->user->blog_perm($site->id);
+		if (@$blogs || $site_perm->can_rebuild) {
 			push(@$sites, {
-				'id' => $site->id,
-				'name' => $site->name,
-				'blogs' => $blogs,
+				'id'          => $site->id,
+				'name'        => $site->name,
+				'can_rebuild' => $site_perm->can_rebuild,
+				'blogs'       => $blogs,
 			});
 		}
 	}

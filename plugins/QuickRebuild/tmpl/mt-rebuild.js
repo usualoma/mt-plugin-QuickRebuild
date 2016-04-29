@@ -277,8 +277,10 @@ ToIMT.prototype.rebuild_all = function() {
 				return [ '<li id="', b.get('id'), '">',
 					'<input type="checkbox" name="' + id + '" id="' + id + '" />&nbsp;',
 					b.get('name'),
-					' <a href="', self.mt_cgi, '?blog_id=', b.get('id'), '" target="_blank">Home</a>',
-					' <a href="', self.mt_cgi, '?__mode=list&_type=template&blog_id=', b.get('id'), '" target="_blank">Design</a>',
+          ('can_rebuild' in b.toObject() && ! b.get('can_rebuild')) ? '' : [
+					  ' <a href="', self.mt_cgi, '?blog_id=', b.get('id'), '" target="_blank">Home</a>',
+					  ' <a href="', self.mt_cgi, '?__mode=list&_type=template&blog_id=', b.get('id'), '" target="_blank">Design</a>',
+          ].join(''),
 					' <span class="rebuild_doing" style="display: none" >Rebuilding...</span> ',
 					' <span class="rebuild_success" style="display: none" >Done</span> ',
 					' <span class="rebuild_error" style="display: none" ></span> ',
@@ -443,6 +445,21 @@ ToIMT.prototype.do_rebuild = function(onComplete) {
 		}
 		return;
 	}
+
+  if ('can_rebuild' in this.rebuild_queue[0].toObject() && ! this.rebuild_queue[0].get('can_rebuild')) {
+		var blog     = this.rebuild_queue.shift();
+	  var li       = this.message_frame.contentWindow.document.getElementById(blog.get('id'));
+	  var li_nodes = li.childNodes;
+		var i;
+		li.style.textDecoration = '';
+		li.style.fontWeight = 'bold';
+		for (i = 0; i < li_nodes.length; i++) {
+			if (li_nodes[i].className == 'rebuild_success') {
+				li_nodes[i].style.display = '';
+			}
+		}
+    return;
+  }
 
 	var self = this;
 	this.rebuild_blog(
