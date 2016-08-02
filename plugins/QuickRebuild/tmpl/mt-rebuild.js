@@ -694,7 +694,7 @@ ToIMT.prototype.list_blogs = function(sites, onListed) {
             data: {
                 __mode: "filtered_list",
                 datasource: "blog",
-                blog_id: sites[site_index].id,
+                blog_id: sites[site_index].get('id'),
                 columns: "name",
                 limit: "50",
                 page: offset,
@@ -712,7 +712,7 @@ ToIMT.prototype.list_blogs = function(sites, onListed) {
                 }));
             });
 
-            if (parseInt(data.result.page, 10) !== parseInt(data.result.page_max, 10)) {
+            if (parseInt(data.result.page_max, 10) > 0 && parseInt(data.result.page, 10) !== parseInt(data.result.page_max, 10)) {
                 inner(parseInt(data.result.page, 10) + 1);
             }
             else {
