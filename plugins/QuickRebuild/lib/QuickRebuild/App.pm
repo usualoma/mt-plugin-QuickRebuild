@@ -35,7 +35,10 @@ use strict;
 use File::Basename;
 
 sub template_source_header {
-	if (MT->version_number >= 5) {
+	if (MT->version_number >= 7) {
+		&template_source_header_7;
+    }
+	elsif (MT->version_number >= 5) {
 		&template_source_header_5;
 	}
 	else {
@@ -155,6 +158,79 @@ j('#menu-quickrebuild a').click(function(ev) {
 		'quick_rebuild',
 		'width=400,height=400,resizable=yes'
 	);
+});
+
+});
+}
+</script>
+__EOS__
+
+		$$tmpl .= $plugin->translate_templatized($rebuld_script);
+	}
+
+	$$tmpl;
+}
+
+sub template_source_header_7 {
+	my ($cb, $app, $tmpl) = @_;
+	my $plugin = $app->component('QuickRebuild');
+	my $blog = $app->blog;
+
+	if (! $blog || $blog->class eq 'website' || 1) {
+		if ($blog && $blog->is_blog) {
+			$blog = $blog->website;
+		}
+
+		my $static = $app->static_path;
+		my $plugin_name = basename($plugin->{full_path});
+		my $dir = basename(dirname($plugin->{full_path}));
+		my $blog_id = $blog ? ('&blog_id=' . $blog->id) : '';
+		my $rebuld_script = <<__EOS__;
+<script type="text/javascript">
+if (typeof(jQuery) != 'undefined') {
+jQuery(function(j) {
+
+j('#quick_rebuild_all').click(function(ev) {
+	ev.preventDefault();
+	ev.stopPropagation();
+
+	window.open(
+		'<mt:var name="mt_url" />?__mode=quick_rebuild_all$blog_id',
+		'quick_rebuild',
+		'width=400,height=400,resizable=yes'
+	);
+});
+
+j('#primaryNavigation a').each(function(index, elm) {
+    if (!elm.href) {
+        return;
+    }
+
+    if (elm.href.match(/__mode=rebuild_all_blog/)) {
+        j(elm).click(function(ev) {
+	        ev.preventDefault();
+	        ev.stopPropagation();
+
+	        window.open(
+		        '<mt:var name="mt_url" />?__mode=quick_rebuild_all$blog_id',
+		        'quick_rebuild',
+		        'width=400,height=400,resizable=yes'
+	        );
+        });
+    }
+
+    if (elm.href.match(/quick_rebuild=1/)) {
+        j(elm).click(function(ev) {
+	        ev.preventDefault();
+	        ev.stopPropagation();
+
+	        window.open(
+		        this.href,
+		        'quick_rebuild',
+		        'width=400,height=400,resizable=yes'
+	        );
+        });
+    }
 });
 
 });
@@ -346,6 +422,10 @@ sub quick_rebuild_all_4 {
 }
 
 sub init_app {
+	if (MT->version_number >= 7) {
+        return &init_app_7;
+    }
+
     my ( $cb, $app ) = @_;
     my $plugin = MT->component('QuickRebuild');
 
@@ -377,6 +457,76 @@ sub init_app {
             condition => sub {
                 my $at = MT->instance->blog->archive_type || '';
                 $at =~ m/(^|,)$k(,|$)/;
+            },
+        };
+        $order += 100;
+    }
+}
+
+sub init_app_7 {
+    my ( $cb, $app ) = @_;
+    my $plugin = MT->component('QuickRebuild');
+
+    my $menus = $plugin->registry( 'applications', 'cms', 'menus' );
+
+    require MT::WeblogPublisher;
+    my @classes = qw(
+Individual
+Page
+Daily
+Date
+Monthly
+Weekly
+Yearly
+Author
+AuthorDaily
+AuthorMonthly
+AuthorWeekly
+AuthorYearly
+Category
+CategoryDaily
+CategoryMonthly
+CategoryWeekly
+CategoryYearly
+ContentType
+ContentTypeAuthor
+ContentTypeAuthorDaily
+ContentTypeAuthorMonthly
+ContentTypeAuthorWeekly
+ContentTypeAuthorYearly
+ContentTypeCategory
+ContentTypeCategoryDaily
+ContentTypeCategoryMonthly
+ContentTypeCategoryWeekly
+ContentTypeCategoryYearly
+ContentTypeDaily
+ContentTypeDate
+ContentTypeMonthly
+ContentTypeWeekly
+ContentTypeYearly
+    );
+    my $order = 200;
+    foreach my $c (@classes) {
+        my $class = "MT::ArchiveType::$c";
+        eval "require $class;" or next;
+        my $label = $class->new->archive_label;
+
+        my $c_at = $c;
+        $c_at =~ s/(ContentType)(?=\w)/$1-/g;
+        $menus->{ 'quickrebuild:' . $c } = {
+            label => sub {
+                $app->translate( 'Only [_1] Archives', $label );
+            },
+            order => $order,
+            mode  => 'rebuild_confirm',
+            args  => {
+                'quick_rebuild'       => 1,
+                'quick_rebuild_type', => $c,
+            },
+            view      => [qw(website blog)],
+            condition => sub {
+                my $at = MT->instance->blog->archive_type || '';
+                $at =~ m/(^|,)$c_at(,|$)/;
             },
         };
         $order += 100;

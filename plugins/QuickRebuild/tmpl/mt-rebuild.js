@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2008-2009 ToI-Planning, All rights reserved.
+ *  Copyright (c) 2008-2018 ToI-Planning, All rights reserved.
  *
  *  Redistribution and use in source and binary forms, with or without
  *  modification, are permitted provided that the following conditions
@@ -79,7 +79,7 @@ function mt_rebuild_close_dialog() {
 			win = window;
 		}
 
-		win.jQuery.fn.mtDialog.close();
+		(win.jQuery.fn.mtModal || win.jQuery.fn.mtDialog).close();
 	}
 }
 
@@ -87,7 +87,7 @@ function mt_rebuild_close_dialog() {
 function mt_rebuild(param) {
 	function inner() {
 		if (typeof Prototype === 'undefined') {
-			setTimeout(inner, 500);
+			setTimeout(inner, 200);
 			return;
 		}
 
@@ -151,25 +151,42 @@ function ToIMT (param) {
 				document.body.appendChild(this.message_frame);
 			}
 
-			try {
-				openDialog(false, '');
-			}
-			catch(e) {
-				jQuery.fn.mtDialog.open(
-					ScriptURI + '?__mode=unkown'
-				);
+      if (typeof jQuery.fn.mtModal !== "undefined") {
+        // MT7
+        jQuery.fn.mtModal.open(ScriptURI + '?__mode=unkown', { large: true });
 				var self = this;
 				function get_quickrebuild_message_frame() {
-					var frame;
-					if (frame = $('mt-dialog-iframe')) {
-						self.message_frame = frame;
-					}
-					else {
-						setTimeout(get_quickrebuild_message_frame, 100);
-					}
+				  var frame;
+				  if (frame = jQuery('.mt-dialog-iframe').get(0)) {
+					  self.message_frame = frame;
+				  }
+				  else {
+					  setTimeout(get_quickrebuild_message_frame, 100);
+				  }
 				}
 				setTimeout(get_quickrebuild_message_frame, 1);
-			}
+      }
+      else {
+			  try {
+				  openDialog(false, '');
+			  }
+			  catch(e) {
+				  jQuery.fn.mtDialog.open(
+					  ScriptURI + '?__mode=unkown'
+				  );
+				  var self = this;
+				  function get_quickrebuild_message_frame() {
+					  var frame;
+					  if (frame = $('mt-dialog-iframe')) {
+						  self.message_frame = frame;
+					  }
+					  else {
+						  setTimeout(get_quickrebuild_message_frame, 100);
+					  }
+				  }
+				  setTimeout(get_quickrebuild_message_frame, 1);
+			  }
+      }
 		}
 
 		var exec_frame = $$('iframe[name=mt_rebuild_js_exec_frame]');

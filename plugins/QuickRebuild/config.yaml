@@ -76,7 +76,11 @@ applications:
                     quick_rebuild: 1
                     quick_rebuild_type: index
         
-            system:quickrebuild:
+            tools:quickrebuild:
                 label: Rebuild all blog
                 order: 1000
                 mode: rebuild_all_blog
+                view:
+                    - system
+                    - website
+                    - blog
