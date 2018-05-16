@@ -439,6 +439,32 @@ ToIMT.prototype.rebuild_all = function() {
 					$A(getByName('start_rebuild')).each(function(start) {
 						start.disabled = '';
 					});
+
+					if (!("Notification" in window)) {
+						return;
+					}
+
+					function showNotification() {
+						var notification = new Notification("QuickRebuild", {
+							body: "completed!",
+							icon: [
+								"https://usualoma.github.io/mt-plugin-QuickRebuild/tree/",
+								self.Tag,
+								"/mt-static/plugins/QuickRebuild/images/notification-icon.png"
+							].join(""),
+						});
+					}
+
+					if (Notification.permission === "granted") {
+						showNotification();
+					}
+					else if (Notification.permission !== 'denied') {
+						Notification.requestPermission(function (permission) {
+							if (permission === "granted") {
+								showNotification();
+							}
+						});
+					}
 				});
 
 				return false;
