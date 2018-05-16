@@ -469,6 +469,11 @@ sub init_app_7 {
 
     my $menus = $plugin->registry( 'applications', 'cms', 'menus' );
 
+    if (!$app->config->QuickRebuildShowMenu) {
+        delete $menus->{quickrebuild};
+        return;
+    }
+
     require MT::WeblogPublisher;
     my @classes = qw(
 Individual

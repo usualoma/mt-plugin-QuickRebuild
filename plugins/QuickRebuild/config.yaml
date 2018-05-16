@@ -40,6 +40,10 @@ author_link: http://tec.toi-planning.net/
 plugin_link: http://tec.toi-planning.net/mt/quickrebuild/
 doc_link: http://tec.toi-planning.net/mt/quickrebuild/
 
+config_settings:
+    QuickRebuildShowMenu:
+        default: 0
+
 #Localization
 l10n_class: QuickRebuild::L10N
 
