@@ -431,6 +431,11 @@ sub init_app {
 
     my $menus = $plugin->registry( 'applications', 'cms', 'menus' );
 
+    if (!$app->config->QuickRebuildShowMenu) {
+        delete $menus->{quickrebuild};
+        return;
+    }
+
     require MT::WeblogPublisher;
     my $types = MT::WeblogPublisher->core_archive_types;
     my $order = 200;
