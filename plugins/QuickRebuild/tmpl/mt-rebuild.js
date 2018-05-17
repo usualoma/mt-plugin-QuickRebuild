@@ -63,9 +63,12 @@ if (typeof Prototype === 'undefined') {
 	})();
 }
 
-var quickrebuild_mt_version = 5;
+var quickrebuild_mt_version = 7;
 if (typeof(jQuery) == 'undefined') {
 	quickrebuild_mt_version = 4;
+}
+else if (jQuery.fn.jquery.match(/^1\./)) {
+	quickrebuild_mt_version = 5;
 }
 
 /* closeDialog */
@@ -680,6 +683,7 @@ ToIMT.prototype.list_websites = function(onListed) {
 	}
 
 	function inner(offset) {
+        var columns = quickrebuild_mt_version <= 6 ? "name" : "name,parent_website";
         jQuery.ajax({
             type: 'POST',
             url: CMSScriptURI,
@@ -687,7 +691,7 @@ ToIMT.prototype.list_websites = function(onListed) {
                 __mode: "filtered_list",
                 datasource: "website",
                 blog_id: "0",
-                columns: "name",
+                columns: columns,
                 limit: "50",
                 page: offset,
                 magic_token: jQuery('input[name="magic_token"]').val(),
@@ -698,6 +702,10 @@ ToIMT.prototype.list_websites = function(onListed) {
         })
         .done(function(data) {
             jQuery.each(data.result.objects, function() {
+                if (this[2] && this[2] !== "-") {
+                  return;
+                }
+
                 sites.push($H({
                     id: this[0],
                     name: jQuery(this[1]).text()
