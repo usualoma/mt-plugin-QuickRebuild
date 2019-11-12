@@ -138,7 +138,7 @@ list.prepend(
 	'<li id="rebuild-site" class="nav-link"><a href="#" title="<__trans phrase="Rebuild all blog">" id="quick_rebuild_all" style="background-image: url(' + "'${static}${dir}/${plugin_name}/images/nav-icon-power-publish.png'" + ');"><span><__trans phrase="Publish"></span></a></li>'
 );
 
-j('#quick_rebuild_all').click(function(ev) {
+j('#quick_rebuild_all').on('click', function(ev) {
 	ev.preventDefault();
 	ev.stopPropagation();
 
@@ -149,7 +149,7 @@ j('#quick_rebuild_all').click(function(ev) {
 	);
 });
 
-j('#menu-quickrebuild a').click(function(ev) {
+j('#menu-quickrebuild a').on('click', function(ev) {
 	ev.preventDefault();
 	ev.stopPropagation();
 
@@ -190,7 +190,7 @@ sub template_source_header_7 {
 if (typeof(jQuery) != 'undefined') {
 jQuery(function(j) {
 
-j('#quick_rebuild_all').click(function(ev) {
+j('#quick_rebuild_all').on('click', function(ev) {
 	ev.preventDefault();
 	ev.stopPropagation();
 
@@ -207,7 +207,7 @@ j('#primaryNavigation a').each(function(index, elm) {
     }
 
     if (elm.href.match(/__mode=rebuild_all_blog/)) {
-        j(elm).click(function(ev) {
+        j(elm).on('click', function(ev) {
 	        ev.preventDefault();
 	        ev.stopPropagation();
 
@@ -220,7 +220,7 @@ j('#primaryNavigation a').each(function(index, elm) {
     }
 
     if (elm.href.match(/quick_rebuild=1/)) {
-        j(elm).click(function(ev) {
+        j(elm).on('click', function(ev) {
 	        ev.preventDefault();
 	        ev.stopPropagation();
 
