@@ -542,10 +542,15 @@ ToIMT.prototype.fetch_blog_info = function(blog, onComplete) {
 			});
 			if (select.length != 0) {
 				blog.set('types', select[0].options[0].value);
-
 				select.each(function(elm) {
 					Element.remove(elm);
 				});
+
+				var ottElm = self.frame.contentWindow.document.querySelector('input[name="ott"]');
+				if (ottElm) {
+					blog.set('ott', ottElm.value);
+				}
+
 				self.log('fetching blog information done ' + blog.get('name'));
 				return onComplete();
 			}
@@ -577,7 +582,8 @@ ToIMT.prototype.rebuild_blog = function(blog, onComplete) {
 				__mode: 'start_rebuild',
 				blog_id: blog.get('id'),
 				next: 0,
-				type: blog.get('types')
+				type: blog.get('types'),
+				ott: blog.get('ott'),
 			});
 
 			var url = self.mt_cgi + '?' + param.toQueryString();
