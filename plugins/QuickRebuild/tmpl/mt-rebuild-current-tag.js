@@ -1,5 +1,5 @@
 (function() {
-	var tag = 'v0.7.3';
+	var tag = 'v0.7.4';
 	if (window.ToIMT_loaded_tag != tag) {
 		window.ToIMT_updated_callback(tag);
 	}
