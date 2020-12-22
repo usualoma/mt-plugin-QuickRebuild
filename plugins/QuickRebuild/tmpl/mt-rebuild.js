@@ -572,10 +572,11 @@ ToIMT.prototype.fetch_blog_info = function (blog, onComplete) {
         });
 
         var ottElm = self.frame.contentWindow.document.querySelector(
-          'input[name="ott"]'
+          'input[name="ott"], input[name="rbtoken"]'
         );
         if (ottElm) {
           blog.set("ott", ottElm.value);
+          blog.set("ottKeyName", ottElm.name);
         }
 
         self.log("fetching blog information done " + blog.get("name"));
@@ -612,8 +613,8 @@ ToIMT.prototype.rebuild_blog = function (blog, onComplete) {
         blog_id: blog.get("id"),
         next: 0,
         type: blog.get("types"),
-        ott: blog.get("ott"),
       });
+      param[blog.get("ottKeyName")] = blog.get("ott");
 
       var url = self.mt_cgi + "?" + param.toQueryString();
       window.open(url, self.frame.name);
