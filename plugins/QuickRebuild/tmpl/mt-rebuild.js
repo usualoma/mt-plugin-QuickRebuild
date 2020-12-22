@@ -614,7 +614,7 @@ ToIMT.prototype.rebuild_blog = function (blog, onComplete) {
         next: 0,
         type: blog.get("types"),
       });
-      param[blog.get("ottKeyName")] = blog.get("ott");
+      param.set(blog.get("ottKeyName"), blog.get("ott"));
 
       var url = self.mt_cgi + "?" + param.toQueryString();
       window.open(url, self.frame.name);
