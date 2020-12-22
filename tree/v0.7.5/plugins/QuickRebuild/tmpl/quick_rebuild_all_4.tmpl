@@ -1,0 +1,39 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="ja" xml:lang="ja">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta http-equiv="content-script-type" content="text/javascript" />
+<meta http-equiv="content-style-type" content="text/css" />
+
+<title><__trans phrase="Rebuild all blog"></title>
+<style type="text/css">
+	body {
+		margin: 0px;
+		padding: 0px;
+	}
+	iframe {
+		margin: 0px auto;
+		width: 100%;
+		height: 370px;
+		margin: 0px;
+		padding: 0px;
+		border: 0px;
+	}
+</style>
+</head>
+<body>
+	<iframe src="" name="ToIMTRebuildWindow" frameborder="0"></iframe>
+	<script>
+		var mt_rebuild_rebuild_queue = [];
+		<mt:Loop name="blogs">
+			<mt:Var name="__value__" />
+		mt_rebuild_rebuild_queue.push({
+			id: '<mt:Var name="id" />',
+			name: '<mt:Var name="name" encode_js="1" />'
+		});
+		</mt:Loop>
+	</script>
+	<script src="<mt:var name="script_url">?__mode=rebuild_all_blog_js">
+	</script>
+</body>
+</html>

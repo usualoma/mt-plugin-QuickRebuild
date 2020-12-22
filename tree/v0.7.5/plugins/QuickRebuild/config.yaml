@@ -1,0 +1,90 @@
+#   Copyright (c) 2008 ToI-Planning, All rights reserved.
+# 
+#   Redistribution and use in source and binary forms, with or without
+#   modification, are permitted provided that the following conditions
+#   are met:
+# 
+#   1. Redistributions of source code must retain the above copyright
+#      notice, this list of conditions and the following disclaimer.
+#
+#   2. Redistributions in binary form must reproduce the above copyright
+#      notice, this list of conditions and the following disclaimer in the
+#      documentation and/or other materials provided with the distribution.
+#
+#   3. Neither the name of the authors nor the names of its contributors
+#      may be used to endorse or promote products derived from this
+#      software without specific prior written permission.
+#
+#   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+#   "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+#   LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+#   A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+#   OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+#   SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED
+#   TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+#   PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+#   LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+#   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+#   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+#
+#  $Id$
+
+#plugin name
+name: QuickRebuild
+version: 0.7.5
+
+#about this plugin
+description: <__trans phrase="Rebuild quickly">
+author_name: <__trans phrase="toi-planning">
+author_link: http://tec.toi-planning.net/
+plugin_link: http://tec.toi-planning.net/mt/quickrebuild/
+doc_link: http://tec.toi-planning.net/mt/quickrebuild/
+
+config_settings:
+    QuickRebuildShowMenu:
+        default: 0
+
+#Localization
+l10n_class: QuickRebuild::L10N
+
+init_app: QuickRebuild::App::init_app
+
+callbacks:
+    MT::App::CMS::template_source.header: QuickRebuild::App::template_source_header
+    MT::App::CMS::template_source.rebuild_confirm: QuickRebuild::App::template_source_rebuild_confirm
+    MT::App::CMS::template_source.rebuilt: QuickRebuild::App::template_source_rebuilt
+
+applications:
+    cms:
+        methods:
+            rebuild_all_blog_js_frame: QuickRebuild::App::rebuild_all_blog_js_frame
+            rebuild_all_blog_js: QuickRebuild::App::rebuild_all_blog_js
+            quick_rebuild_all: QuickRebuild::App::quick_rebuild_all
+
+        menus:
+            quickrebuild:
+                label: Rebuild
+                order: 1000
+                mode: rebuild_confirm
+                args:
+                    quick_rebuild: 1
+
+            quickrebuild:index:
+                label: Only Indexes
+                order: 100
+                view:
+                    - website
+                    - blog
+                mode: rebuild_confirm
+                args:
+                    quick_rebuild: 1
+                    quick_rebuild_type: index
+        
+            tools:quickrebuild:
+                label: Rebuild all blog
+                order: 1000
+                mode: rebuild_all_blog
+                view:
+                    - system
+                    - website
+                    - blog
