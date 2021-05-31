@@ -88,3 +88,4 @@ applications:
                     - system
                     - website
                     - blog
+                condition: sub { MT->version_number >= 7 }
