@@ -577,6 +577,10 @@ ToIMT.prototype.fetch_blog_info = function (blog, onComplete) {
         if (ottElm) {
           blog.set("ott", ottElm.value);
           blog.set("ottKeyName", ottElm.name);
+          self.log("one time token found in : " + ottElm.name);
+        }
+        else {
+          self.log("failed to get one time token.");
         }
 
         self.log("fetching blog information done " + blog.get("name"));
