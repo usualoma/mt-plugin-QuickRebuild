@@ -391,6 +391,7 @@ sub quick_rebuild_all_5 {
 	$param->{'sites'} = $sites;
 
 	my $plugin = MT->component('QuickRebuild');
+	$param->{'quick_rebuild_plugin_version'} = $plugin->version;
 	$plugin->load_tmpl('quick_rebuild_all_5.tmpl', $param);
 }
 
@@ -418,6 +419,7 @@ sub quick_rebuild_all_4 {
 		$plugin->{full_path}, 'tmpl', 'quick_rebuild_all_4.tmpl'
 	);
 
+	$param->{'quick_rebuild_plugin_version'} = $plugin->version;
 	$app->load_tmpl($edit_tmpl, $param);
 }
 
