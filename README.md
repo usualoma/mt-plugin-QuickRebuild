@@ -22,6 +22,7 @@ Supported environments
 * 5.x
 * 6.x
 * 7.x
+* 8.x
 
 Contributors
 ------------
