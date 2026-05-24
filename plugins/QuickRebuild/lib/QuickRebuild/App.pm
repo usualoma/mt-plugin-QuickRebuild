@@ -331,14 +331,19 @@ sub rebuild_all_blog_js {
     my ($param) = @_;
     $param ||= {};
 
-	my $plugin = MT->component('QuickRebuild');
-	my $edit_tmpl = File::Spec->catdir(
-		$plugin->{full_path}, 'tmpl', 'mt-rebuild.js'
-	);
+    my $plugin = MT->component('QuickRebuild');
+    my $edit_tmpl = File::Spec->catfile(
+        $plugin->{full_path}, 'tmpl', 'mt-rebuild.js'
+    );
 
-	$app->{cgi_headers}{'Content-Type'} = 'text/javascript; charset=UTF-8';
-	open(my $fh, $edit_tmpl);
-	do{ local $/; <$fh> };
+    open(my $fh, '<:encoding(UTF-8)', $edit_tmpl)
+        or return $app->error("Cannot open $edit_tmpl: $!");
+
+    my $content = do { local $/; <$fh> };
+    close($fh);
+
+    $app->response_content_type('text/javascript; charset=UTF-8');
+    return $content;
 }
 
 sub quick_rebuild_all {
